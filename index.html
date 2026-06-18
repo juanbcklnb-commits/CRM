@@ -4,77 +4,171 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualizador de Datos - LNB SGC</title>
+    <!-- Cargamos PapaParse para procesar el CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
-        h1 { color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 10px; }
-        .table-container { overflow-x: auto; margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #2b6cb0; color: white; font-weight: bold; }
-        tr:hover { background-color: #f7fafc; }
-        #mensaje { font-weight: bold; color: #4a5568; }
+        /* --- ESTILOS VISUALES (CSS) PARA NO ROMPER LA ESTRUCTURA --- */
+        
+        /* 1. Reset básico para que se vea igual en todos los navegadores */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        /* 2. Contenedor principal centrado y responsivo */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        #mensaje {
+            text-align: center;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin: 20px 0;
+            font-size: 1.1em;
+        }
+
+        /* 3. ESTRUCTURA DE LA TABLA (IMPORTANTE) */
+        /* Contenedor que permite scroll horizontal si la tabla es muy ancha */
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px; /* Ancho mínimo para que no se amontone el texto */
+        }
+
+        /* Estilos de encabezado (fijo arriba) */
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            padding: 15px;
+            text-align: left;
+            position: sticky; /* Mantiene el encabezado fijo si haces scroll vertical en el contenedor */
+            top: 0;
+        }
+
+        /* Estilos de celdas */
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.95em;
+        }
+
+        /* Alternar colores de fila para mejor lectura */
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        /* Efecto hover al pasar el mouse */
+        tr:hover {
+            background-color: #eaf6ff;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
 
-    <h1>Sistema de Gestión Controlada (SGC) - Datos de Inventario y Presupuesto</h1>
-    <div id="mensaje">Cargando información desde Google Sheets...</div>
+    <div class="main-container">
+        <h1>Sistema de Gestión Controlada (SGC) - LNB</h1>
+        <div id="mensaje">Conectando con Google Sheets y cargando datos...</div>
 
-    <div class="table-container">
-        <table id="tabla-datos">
-            <thead>
-                <tr id="encabezados"></tr>
-            </thead>
-            <tbody id="cuerpo-tabla"></tbody>
-        </table>
+        <!-- Esta es la estructura que contiene la tabla -->
+        <div class="table-wrapper">
+            <table id="tabla-datos">
+                <thead>
+                    <tr id="encabezados">
+                        <!-- Aquí se cargarán los títulos automáticamente -->
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla">
+                    <!-- Aquí se cargarán las filas automáticamente -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        // CORREGIDO: URL en una sola línea continua y sin espacios
+        // --- CÓDIGO DE CONEXIÓN (JAVASCRIPT) ---
+        
+        // Tu URL de Google Sheets en formato CSV (Corregida en una línea)
         const urlCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWmXFEoqpd7NT9tJKpvLVoD8C3cd-t-Ub2CIsSxt_23ppOHnKDjcwKrKykRndwOkOrE5p0p1xX8tNV/pub?gid=1451749554&single=true&output=csv';
 
         function cargarDatos() {
             Papa.parse(urlCSV, {
                 download: true,
-                header: true,
-                skipEmptyLines: true,
+                header: true, // Asume la primera fila como títulos
+                skipEmptyLines: true, // Ignora filas vacías
                 complete: function(resultado) {
                     const datos = resultado.data;
                     const columnas = resultado.meta.fields;
                     
                     if (datos.length === 0) {
-                        document.getElementById('mensaje').innerText = "No se encontraron datos en el archivo.";
+                        document.getElementById('mensaje').innerText = "Atención: No se encontraron datos en el archivo de Google Sheets.";
                         return;
                     }
 
+                    // 1. Generar Encabezados
                     const filaEncabezados = document.getElementById('encabezados');
+                    filaEncabezados.innerHTML = ""; // Limpiar antes de cargar
                     columnas.forEach(columna => {
                         const th = document.createElement('th');
                         th.innerText = columna;
                         filaEncabezados.appendChild(th);
                     });
 
+                    // 2. Generar Filas de Datos
                     const cuerpoTabla = document.getElementById('cuerpo-tabla');
+                    cuerpoTabla.innerHTML = ""; // Limpiar antes de cargar
                     datos.forEach(fila => {
                         const tr = document.createElement('tr');
                         columnas.forEach(columna => {
                             const td = document.createElement('td');
-                            td.innerText = fila[columna] || '';
+                            td.innerText = fila[columna] || ''; // Si está vacío pone texto en blanco
                             tr.appendChild(td);
                         });
                         cuerpoTabla.appendChild(tr);
                     });
 
+                    // Ocultar mensaje de carga
                     document.getElementById('mensaje').style.display = 'none';
                 },
                 error: function(err) {
-                    document.getElementById('mensaje').innerText = "Error al conectar con Google Sheets. Verifica la publicación.";
+                    document.getElementById('mensaje').innerText = "Error crítico: No se pudo conectar con Google Sheets. Verifica la publicación del archivo.";
                     console.error(err);
                 }
             });
         }
 
+        // Ejecutar la función cuando la página esté lista
         window.addEventListener('DOMContentLoaded', cargarDatos);
     </script>
 </body>
