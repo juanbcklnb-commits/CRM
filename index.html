@@ -465,4 +465,415 @@ tbody td {
       <select class="filter-select" id="fil-tipo" onchange="renderTable()">
         <option value="">Todos los tipos</option>
       </select>
-      <select class="filter-
+      <select class="filter-select" id="fil-estado" onchange="renderTable()">
+        <option value="">Todos los estados</option>
+      </select>
+      <select class="filter-select" id="fil-unidad" onchange="renderTable()">
+        <option value="">Todas las unidades</option>
+      </select>
+      <span id="row-count" style="font-size:11px;color:var(--text-light);margin-left:auto;font-family:'DM Mono',monospace;"></span>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Requisición</th>
+              <th>Descripción</th>
+              <th>Unidad</th>
+              <th>Tipo</th>
+              <th>Precio Ref.</th>
+              <th>Precio Adj.</th>
+              <th>Proveedor</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-body">
+            <tr><td colspan="9"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="status-bar">
+        <span id="status-left">—</span>
+        <span id="status-right">—</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Lotería Nacional de Beneficencia · Depto. de Compras y Proveeduría · 2026</span>
+    <span>Fuente: Google Sheets (datos en vivo) · Actualización automática cada 5 min.</span>
+  </footer>
+
+</div>
+
+<script>
+// URL de la API de Google Visualization basada en tu ID de documento público
+const SHEET_ID = '1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ';
+const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+let allRows = [];
+let charts = {};
+
+/* ────────────────────────────────
+   FETCH + CORRECCIÓN DE PARSEO JSON
+──────────────────────────────── */
+async function loadData() {
+  document.getElementById('error-box').style.display = 'none';
+  try {
+    const res = await fetch(JSON_URL + '&_t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    
+    const text = await res.text();
+    
+    // Limpieza estricta del wrapper de Google
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}') + 1;
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('La respuesta de Google Sheets no tiene un formato válido.');
+    
+    const jsonData = JSON.parse(text.substring(jsonStart, jsonEnd));
+    allRows = parseGoogleJson(jsonData);
+    
+    document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PA');
+    const dbg = document.getElementById('debug-cols');
+    if (dbg && allRows.length) { dbg.style.display = 'block'; }
+    renderAll();
+  } catch(e) {
+    console.error(e);
+    const eb = document.getElementById('error-box');
+    eb.textContent = 'Error de sincronización: ' + e.message + '. Asegúrese de que el Sheet esté compartido públicamente.';
+    eb.style.display = 'block';
+    document.getElementById('last-update').textContent = 'Error al actualizar';
+  }
+}
+
+function parseGoogleJson(googleData) {
+  if (!googleData.table || !googleData.table.cols || !googleData.table.rows) return [];
+  
+  const table = googleData.table;
+  // Mapeamos los nombres de las columnas limpiando espacios
+  const headers = table.cols.map(col => col.label ? col.label.trim() : '');
+  
+  return table.rows.map(row => {
+    const obj = {};
+    if (!row || !row.c) return obj;
+    
+    row.c.forEach((cell, idx) => {
+      const headerName = headers[idx] || `Columna_${idx}`;
+      if (cell && cell.v !== null && cell.v !== undefined) {
+        // Usamos el valor formateado .f (con comas/monedas fijas del Sheet) si existe, sino el crudo .v
+        obj[headerName] = String(cell.f !== undefined ? cell.f : cell.v).trim();
+      } else {
+        obj[headerName] = '';
+      }
+    });
+    return obj;
+  });
+}
+
+function parseMoney(val) {
+  if (!val) return 0;
+  // Remueve de forma segura $, espacios y caracteres no numéricos excepto puntos y comas
+  let clean = val.replace(/[$,\s]/g, '');
+  
+  // Normalización de separadores de miles del formato regional de Panamá/EE.UU.
+  if (clean.includes(',') && clean.includes('.')) {
+    if (clean.indexOf('.') < clean.indexOf(',')) {
+      clean = clean.replace(/\./g, '').replace(',', '.');
+    } else {
+      clean = clean.replace(/,/g, '');
+    }
+  } else if (clean.includes(',') && !clean.includes('.')) {
+    if (clean.split(',')[1].length === 2) {
+      clean = clean.replace(',', '.');
+    } else {
+      clean = clean.replace(/,/g, '');
+    }
+  }
+  return parseFloat(clean) || 0;
+}
+
+/* ────────────────────────────────
+   DETECCIÓN FLEXIBLE DE ENCABEZADOS
+──────────────────────────────── */
+function col(row, ...candidates) {
+  if (!row) return '';
+  const keys = Object.keys(row);
+  for (const c of candidates) {
+    const match = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
+    if (match && row[match]) return row[match];
+  }
+  return '';
+}
+
+/* ────────────────────────────────
+   CONTROLES DE RENDERIZADO
+──────────────────────────────── */
+function renderAll() {
+  if (!allRows.length) return;
+
+  const keys = Object.keys(allRows[0]);
+  const dbg = document.getElementById('debug-cols');
+  if (dbg) dbg.textContent = 'Columnas activas: ' + keys.join(' | ');
+
+  populateFilters();
+  renderKPIs();
+  renderCharts();
+  renderTable();
+
+  document.getElementById('charts-row').style.display = 'grid';
+}
+
+function populateFilters() {
+  const tipos = [...new Set(allRows.map(r => col(r,'tipo','procedimiento','modalidad')).filter(Boolean))].sort();
+  const estados = [...new Set(allRows.map(r => col(r,'estado','estatus','status')).filter(Boolean))].sort();
+  const unidades = [...new Set(allRows.map(r => col(r,'unidad','departamento','area','dependencia','ejecutora')).filter(Boolean))].sort();
+
+  fillSelect('fil-tipo', tipos, 'Todos los tipos');
+  fillSelect('fil-estado', estados, 'Todos los estados');
+  fillSelect('fil-unidad', unidades, 'Todas las unidades');
+}
+
+function fillSelect(id, values, placeholder) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+  values.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+}
+
+function renderKPIs() {
+  const total = allRows.length;
+  const adjValues = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')));
+  const refValues = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref')));
+  const totalAdj = adjValues.reduce((a,b)=>a+b,0);
+  const totalRef = refValues.reduce((a,b)=>a+b,0);
+  const ahorro = totalRef - totalAdj;
+  const pctAhorro = totalRef > 0 ? (ahorro/totalRef*100) : 0;
+
+  const completados = allRows.filter(r => {
+    const s = col(r,'estado','estatus','status').toLowerCase();
+    return s.includes('complet') || s.includes('adjudic') || s.includes('finaliz');
+  }).length;
+
+  const pendientes = total - completados;
+
+  const tipoConteo = {};
+  allRows.forEach(r => {
+    const t = col(r,'tipo','procedimiento','modalidad') || 'Sin clasificar';
+    tipoConteo[t] = (tipoConteo[t]||0) + 1;
+  });
+  const tipoMasFrecuente = Object.entries(tipoConteo).sort((a,b)=>b[1]-a[1])[0];
+
+  const kpiData = [
+    { label:'Expedientes totales', value: total, sub: `${completados} completados · ${pendientes} en proceso`, cls:'k-navy' },
+    { label:'Monto total adjudicado', value: '$' + formatNum(totalAdj), sub: 'Precio referencia: $' + formatNum(totalRef), cls:'k-blue' },
+    { label:'Ahorro logrado', value: '$' + formatNum(ahorro), sub: pctAhorro.toFixed(1) + '% sobre precio de referencia', cls:'k-green' },
+    { label:'Completados', value: completados, sub: ((completados/total)*100).toFixed(0) + '% de efectividad', cls:'k-amber' },
+    { label:'Tipo más frecuente', value: tipoMasFrecuente ? tipoMasFrecuente[1] : '-', sub: tipoMasFrecuente ? tipoMasFrecuente[0] : '', cls:'k-red' },
+  ];
+
+  document.getElementById('kpi-row').innerHTML = kpiData.map(k => `
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+function formatNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+  if (n >= 1000) return n.toLocaleString('es-PA', {minimumFractionDigits:0, maximumFractionDigits:0});
+  return n.toFixed(2);
+}
+
+const PALETTE = ['#1a3260','#378add','#1a7a4a','#d97a00','#b03030','#5b3da0','#2a8a80','#8a3a60'];
+
+function renderCharts() {
+  const tipoMap = {};
+  allRows.forEach(r => {
+    const t = col(r,'tipo','procedimiento','modalidad') || 'Otro';
+    const v = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')) ||
+              parseMoney(col(r,'ref','referencia','precio ref','monto ref')) || 1;
+    tipoMap[t] = (tipoMap[t]||0) + v;
+  });
+  const tipoLabels = Object.keys(tipoMap);
+  const tipoData = tipoLabels.map(k => tipoMap[k]);
+  const tipoColors = PALETTE.slice(0, tipoLabels.length);
+
+  destroyChart('chartTipo');
+  charts.tipo = new Chart(document.getElementById('chartTipo'), {
+    type: 'doughnut',
+    data: { labels: tipoLabels, datasets: [{ data: tipoData, backgroundColor: tipoColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString('es-PA') } } }
+    }
+  });
+  document.getElementById('leg-tipo').innerHTML = tipoLabels.map((l,i) =>
+    `<span class="leg-item"><span class="leg-swatch" style="background:${tipoColors[i]}"></span>${l}</span>`
+  ).join('');
+
+  const estadoMap = {};
+  allRows.forEach(r => {
+    const s = col(r,'estado','estatus','status') || 'Sin estado';
+    estadoMap[s] = (estadoMap[s]||0) + 1;
+  });
+  const estLabels = Object.keys(estadoMap).sort((a,b) => estadoMap[b]-estadoMap[a]);
+  const estData = estLabels.map(k => estadoMap[k]);
+  const estColors = estLabels.map(l => {
+    const low = l.toLowerCase();
+    if (low.includes('complet')||low.includes('adjudic')) return '#1a7a4a';
+    if (low.includes('revis')||low.includes('proceso')) return '#d97a00';
+    if (low.includes('pend')||low.includes('espera')) return '#378add';
+    return '#8aa0bb';
+  });
+
+  destroyChart('chartEstado');
+  charts.estado = new Chart(document.getElementById('chartEstado'), {
+    type: 'bar',
+    data: { labels: estLabels, datasets: [{ data: estData, backgroundColor: estColors, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' expedientes' } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 30 } },
+        y: { beginAtZero: true, grid: { color: '#d6e4f7' }, ticks: { stepSize: 1, font: { size: 10 } } }
+      }
+    }
+  });
+  document.getElementById('leg-estado').innerHTML = estLabels.map((l,i) =>
+    `<span class="leg-item"><span class="leg-swatch" style="background:${estColors[i]}"></span>${l} (${estData[i]})</span>`
+  ).join('');
+
+  const unidadRef = {}; const unidadAdj = {};
+  allRows.forEach(r => {
+    const u = col(r,'unidad','departamento','area','dependencia','ejecutora') || 'Sin unidad';
+    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
+    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj'));
+  });
+  const uLabels = Object.keys(unidadRef).sort((a,b) => unidadRef[b]-unidadRef[a]).slice(0,8);
+  const uRef = uLabels.map(k => unidadRef[k]);
+  const uAdj = uLabels.map(k => unidadAdj[k]);
+  const barH = Math.max(uLabels.length * 42 + 60, 200);
+  document.getElementById('chart-unidad-wrap').style.height = barH + 'px';
+
+  destroyChart('chartUnidad');
+  charts.unidad = new Chart(document.getElementById('chartUnidad'), {
+    type: 'bar',
+    data: {
+      labels: uLabels,
+      datasets: [
+        { label: 'Precio referencia', data: uRef, backgroundColor: 'rgba(55,138,221,0.25)', borderColor: '#378add', borderWidth: 1, borderRadius: 3 },
+        { label: 'Precio adjudicado', data: uAdj, backgroundColor: 'rgba(26,122,74,0.6)', borderColor: '#1a7a4a', borderWidth: 1, borderRadius: 3 }
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.x.toLocaleString('es-PA')}` } }
+      },
+      scales: {
+        x: { grid: { color: '#d6e4f7' }, ticks: { font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function destroyChart(id) {
+  const existing = Chart.getChart(id);
+  if (existing) existing.destroy();
+}
+
+function renderTable() {
+  if (!allRows.length) return;
+  const q = (document.getElementById('search-inp').value||'').toLowerCase();
+  const filTipo = document.getElementById('fil-tipo').value;
+  const filEst = document.getElementById('fil-estado').value;
+  const filUnid = document.getElementById('fil-unidad').value;
+
+  const filtered = allRows.filter(r => {
+    const req = col(r,'req','requisicion','numero','nro','expediente');
+    const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien');
+    const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista');
+    const tipo = col(r,'tipo','procedimiento','modalidad');
+    const est = col(r,'estado','estatus','status');
+    const unid = col(r,'unidad','departamento','area','dependencia','ejecutora');
+
+    if (filTipo && tipo !== filTipo) return false;
+    if (filEst && est !== filEst) return false;
+    if (filUnid && unid !== filUnid) return false;
+    if (q && !`${req} ${desc} ${prov}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  document.getElementById('row-count').textContent = filtered.length + ' de ' + allRows.length + ' registros';
+
+  const tbody = document.getElementById('tbl-body');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-light)">Sin resultados para los filtros aplicados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((r, i) => {
+    const req = col(r,'req','requisicion','numero','nro','expediente') || '—';
+    const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien') || '—';
+    const unid = col(r,'unidad','departamento','area','dependencia','ejecutora') || '—';
+    const tipo = col(r,'tipo','procedimiento','modalidad') || '—';
+    const ref = parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
+    const adj = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj'));
+    const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista') || '—';
+    const est = col(r,'estado','estatus','status') || '—';
+
+    const estClass = (() => {
+      const low = est.toLowerCase();
+      if (low.includes('complet')||low.includes('adjudic')) return 'tag-green';
+      if (low.includes('revis')) return 'tag-amber';
+      if (low.includes('dgcp')||low.includes('aprob')) return 'tag-blue';
+      if (low.includes('espera')) return 'tag-navy';
+      return 'tag-amber';
+    })();
+
+    const tipoClass = (() => {
+      const low = tipo.toLowerCase();
+      if (low.includes('menor')) return 'tag-green';
+      if (low.includes('excep')) return 'tag-navy';
+      if (low.includes('convenio')) return 'tag-blue';
+      if (low.includes('licit')) return 'tag-red';
+      return 'tag-navy';
+    })();
+
+    return `<tr>
+      <td class="mono">${i+1}</td>
+      <td class="mono">${req}</td>
+      <td style="max-width:220px;font-size:12px">${desc}</td>
+      <td style="font-size:11px;color:var(--text-mid)">${unid}</td>
+      <td><span class="tag ${tipoClass}">${tipo}</span></td>
+      <td class="amount">${ref ? '$'+ref.toLocaleString('es-PA') : '—'}</td>
+      <td class="amount">${adj ? '$'+adj.toLocaleString('es-PA') : '—'}</td>
+      <td style="font-size:11px">${prov}</td>
+      <td><span class="tag ${estClass}">${est}</span></td>
+    </tr>`;
+  }).join('');
+
+  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')),0);
+  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref')),0);
+  document.getElementById('status-left').textContent = filtered.length + ' expedientes · Adj: $' + totalAdj.toLocaleString('es-PA');
+  document.getElementById('status-right').textContent = 'Ref: $' + totalRef.toLocaleString('es-PA') + ' · Ahorro: $' + (totalRef-totalAdj).toLocaleString('es-PA');
+}
+
+/* ────────────────────────────────
+   INIT
+──────────────────────────────── */
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
