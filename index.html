@@ -179,7 +179,7 @@ body {
 }
 
 .kpi-value {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.5px;
@@ -427,7 +427,6 @@ footer {
 
 <div class="page">
 
-  <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-brand">
       <div class="org">Lotería Nacional de Beneficencia</div>
@@ -447,37 +446,32 @@ footer {
     </div>
   </div>
 
-  <!-- ERROR BOX -->
   <div id="error-box" class="error-box" style="display:none;"></div>
-  <!-- DEBUG CONFIG -->
   <div id="debug-cols" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-light);margin-bottom:8px;word-break:break-all;display:none;"></div>
 
-  <!-- KPIs -->
   <div class="sec-label">Indicadores generales</div>
   <div class="kpi-row" id="kpi-row">
     <div class="loading-overlay" style="grid-column:1/-1;padding:30px"><div class="spinner"></div><span style="font-size:12px;color:var(--text-light)">Conectando con Google Sheets…</span></div>
   </div>
 
-  <!-- CHARTS -->
   <div class="sec-label">Distribución de procedimientos</div>
   <div class="charts-row" id="charts-row" style="display:none;">
     <div class="card">
       <div class="card-title">Por tipo de procedimiento</div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chartTipo" role="img">Cargando…</canvas></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartTipo" role="img" aria-label="Distribución de montos por tipo de procedimiento de compra">Cargando…</canvas></div>
       <div class="chart-legend" id="leg-tipo"></div>
     </div>
     <div class="card">
       <div class="card-title">Por estado actual</div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chartEstado" role="img">Cargando…</canvas></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartEstado" role="img" aria-label="Cantidad de expedientes por estado">Cargando…</canvas></div>
       <div class="chart-legend" id="leg-estado"></div>
     </div>
     <div class="card">
       <div class="card-title">Precio referencia vs. adjudicado por unidad</div>
-      <div class="chart-wrap" id="chart-unidad-wrap"><canvas id="chartUnidad" role="img">Cargando…</canvas></div>
+      <div class="chart-wrap" id="chart-unidad-wrap"><canvas id="chartUnidad" role="img" aria-label="Comparativa de precios por unidad ejecutora">Cargando…</canvas></div>
     </div>
   </div>
 
-  <!-- TABLE -->
   <div class="table-section">
     <div class="sec-label">Registro de expedientes</div>
     <div class="tbl-filters">
@@ -523,7 +517,7 @@ footer {
 
   <footer>
     <span>Lotería Nacional de Beneficencia · Depto. de Compras y Proveeduría · 2026</span>
-    <span>Fuente: Google Sheets (datos en vivo)</span>
+    <span>Fuente: Google Sheets (datos en vivo) · Actualización automática cada 5 min.</span>
   </footer>
 
 </div>
@@ -535,7 +529,7 @@ let allRows = [];
 let charts = {};
 
 /* ────────────────────────────────
-   CSV PARSER CARÁCTER POR CARÁCTER
+   CSV FETCH + PARSE OPTIMIZADO
 ──────────────────────────────── */
 async function loadData() {
   document.getElementById('error-box').style.display = 'none';
@@ -545,11 +539,14 @@ async function loadData() {
     const text = await res.text();
     allRows = parseCSV(text);
     document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PA');
+    const dbg = document.getElementById('debug-cols');
+    if (dbg && allRows.length) { dbg.style.display = 'block'; }
     renderAll();
   } catch(e) {
     const eb = document.getElementById('error-box');
-    eb.textContent = 'Error al cargar datos: ' + e.message;
+    eb.textContent = 'No se pudo cargar la hoja de cálculo. Verifique la conexión o los permisos del documento. (' + e.message + ')';
     eb.style.display = 'block';
+    document.getElementById('last-update').textContent = 'Error al actualizar';
   }
 }
 
@@ -576,7 +573,7 @@ function parseCSV(text) {
     } else if ((c === '\r' || c === '\n') && !inQuotes) {
       if (c === '\r' && nextC === '\n') { i++; }
       currentRow.push(currentField.trim());
-      if (currentRow.length > 0) {
+      if (currentRow.length > 0 && currentRow.some(v => v !== '')) {
         rows.push(currentRow);
       }
       currentRow = [];
@@ -588,96 +585,74 @@ function parseCSV(text) {
   
   if (currentField || currentRow.length > 0) {
     currentRow.push(currentField.trim());
-    rows.push(currentRow);
+    if (currentRow.some(v => v !== '')) rows.push(currentRow);
   }
 
   if (rows.length < 2) return [];
   
-  const headers = rows[0].map(h => h.trim());
+  const headers = rows[0];
   const resultObjects = [];
   
   for (let i = 1; i < rows.length; i++) {
     const vals = rows[i];
-    if (vals.length === 0 || (vals.length === 1 && vals[0] === '')) continue;
     const obj = {};
-    headers.forEach((h, idx) => {
-      obj[h] = (vals[idx] || '');
-    });
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || ''); });
     resultObjects.push(obj);
   }
   
   return resultObjects;
 }
 
-/* ────────────────────────────────
-   PROCESADOR DE MONEDA ADAPTADO
-──────────────────────────────── */
 function parseMoney(val) {
   if (!val) return 0;
-  // Eliminamos "B/.", "$", espacios y cualquier caracter no numérico excepto puntos y comas
-  let clean = val.replace(/[B\/\.\$,\s]/g, '').trim();
-  
-  // Si quedó vacío o es un guion, retornamos 0
-  if (!clean || clean === '—' || clean === '-') return 0;
-
-  // Manejo flexible de formatos decimales de Google Sheets
-  if (clean.includes(',') && !clean.includes('.')) {
-    clean = clean.replace(/,/g, '.');
-  } else if (clean.includes(',') && clean.includes('.')) {
-    clean = clean.replace(/\./g, '').replace(/,/g, '.');
-  }
-  
+  let clean = val.replace(/[$,\s]/g, '');
+  clean = clean.replace(/,/g, '');
   return parseFloat(clean) || 0;
 }
 
 /* ────────────────────────────────
-   BUSCADOR DE COLUMNAS EXACTO
+   DETECCIÓN DE COLUMNAS FLEXIBLE
 ──────────────────────────────── */
-function col(row, keyType) {
-  const keys = Object.keys(row);
-  let targetKey = '';
-
-  if (keyType === 'req') {
-    targetKey = keys.find(k => k.toLowerCase() === 'n° de requisicion' || k.toLowerCase().includes('requisic'));
-  } else if (keyType === 'unidad') {
-    targetKey = keys.find(k => k.toLowerCase() === 'unidad ejecutora' || k.toLowerCase().includes('ejecutora'));
-  } else if (keyType === 'tipo') {
-    targetKey = keys.find(k => k.toLowerCase() === 'tipo de procedimiento' || k.toLowerCase().includes('procedimiento'));
-  } else if (keyType === 'desc') {
-    targetKey = keys.find(k => k.toLowerCase() === 'descripcion' || k.toLowerCase().includes('descrip'));
-  } else if (keyType === 'ref') {
-    targetKey = keys.find(k => k.toLowerCase().includes('precio de referencia') || k.toLowerCase().includes('funcionario'));
-  } else if (keyType === 'estado') {
-    targetKey = keys.find(k => k.toLowerCase() === 'estado' || k.toLowerCase().includes('estatus'));
-  } else if (keyType === 'prov') {
-    targetKey = keys.find(k => k.toLowerCase().includes('empresa adjudicada') || k.toLowerCase().includes('proveedor'));
-  } else if (keyType === 'adj') {
-    targetKey = keys.find(k => k.toLowerCase().includes('precio de adjudicacion') || k.toLowerCase().includes('orden de compra'));
+function col(row, ...candidates) {
+  for (const c of candidates) {
+    const keys = Object.keys(row);
+    const match = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
+    if (match && row[match]) return row[match];
   }
-
-  return targetKey ? row[targetKey] : '';
+  return '';
 }
 
 /* ────────────────────────────────
-   RENDERS PRINCIPALES
+   RENDER TOTAL
 ──────────────────────────────── */
 function renderAll() {
   if (!allRows.length) return;
+
+  const keys = Object.keys(allRows[0]);
+  console.log('Columnas detectadas:', keys);
+
+  const dbg = document.getElementById('debug-cols');
+  if (dbg) dbg.textContent = 'Columnas: ' + keys.join(' | ');
+
   populateFilters();
   renderKPIs();
   renderCharts();
   renderTable();
+
   document.getElementById('charts-row').style.display = 'grid';
 }
 
+/* ────────────────────────────────
+   FILTROS DINÁMICOS
+──────────────────────────────── */
 function populateFilters() {
-  const tipos = [...new Set(allRows.map(r => col(r, 'tipo')).filter(Boolean))].sort();
-  const estados = [...new Set(allRows.map(r => col(r, 'estado')).filter(Boolean))].sort();
-  const unidades = [...new Set(allRows.map(r => col(r, 'unidad')).filter(Boolean))].sort();
+  const tipos   = [...new Set(allRows.map(r => col(r,'tipo','procedimiento','modalidad')).filter(Boolean))].sort();
+  const estados = [...new Set(allRows.map(r => col(r,'estado','estatus','status')).filter(Boolean))].sort();
+  const unidades = [...new Set(allRows.map(r => col(r,'unidad','departamento','area','dependencia','ejecutora')).filter(Boolean))].sort();
 
-  fillSelect('fil-tipo', tipos, 'Todos los tipos');
+  fillSelect('fil-tipo',   tipos,   'Todos los tipos');
   fillSelect('fil-estado', estados, 'Todos los estados');
-  fillSelect('fil-unidad', unidades, 'Todas las unidades');
+  fillSelect('fil-unidad', unidades,'Todas las unidades');
 }
 
 function fillSelect(id, values, placeholder) {
@@ -690,28 +665,38 @@ function fillSelect(id, values, placeholder) {
   });
 }
 
+/* ────────────────────────────────
+   INDICADORES GENERALES (KPIs)
+──────────────────────────────── */
 function renderKPIs() {
   const total = allRows.length;
-  const adjValues = allRows.map(r => parseMoney(col(r, 'adj')));
-  const refValues = allRows.map(r => parseMoney(col(r, 'ref')));
-  
-  const totalAdj = adjValues.reduce((a, b) => a + b, 0);
-  const totalRef = refValues.reduce((a, b) => a + b, 0);
+  const adjValues   = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')));
+  const refValues   = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')));
+  const totalAdj = adjValues.reduce((a,b)=>a+b,0);
+  const totalRef = refValues.reduce((a,b)=>a+b,0);
   const ahorro = totalRef - totalAdj;
-  const pctAhorro = totalRef > 0 ? (ahorro / totalRef * 100) : 0;
+  const pctAhorro = totalRef > 0 ? (ahorro/totalRef*100) : 0;
 
   const completados = allRows.filter(r => {
-    const s = (col(r, 'estado') || '').toLowerCase();
+    const s = col(r,'estado','estatus','status').toLowerCase();
     return s.includes('complet') || s.includes('adjudic') || s.includes('finaliz');
   }).length;
 
   const pendientes = total - completados;
 
+  const tipoConteo = {};
+  allRows.forEach(r => {
+    const t = col(r,'tipo','procedimiento','modalidad') || 'Sin clasificar';
+    tipoConteo[t] = (tipoConteo[t]||0) + 1;
+  });
+  const tipoMasFrecuente = Object.entries(tipoConteo).sort((a,b)=>b[1]-a[1])[0];
+
   const kpiData = [
-    { label: 'Expedientes totales', value: total, sub: `${completados} completados · ${pendientes} en proceso`, cls: 'k-navy' },
-    { label: 'Monto adjudicado total', value: 'B/. ' + formatNum(totalAdj), sub: 'Ref. Total: B/. ' + formatNum(totalRef), cls: 'k-blue' },
-    { label: 'Ahorro total estimado', value: 'B/. ' + formatNum(ahorro), sub: pctAhorro.toFixed(1) + '% de ahorro global', cls: 'k-green' },
-    { label: 'Trámites cerrados', value: completados, sub: ((completados / total) * 100).toFixed(0) + '% del volumen total', cls: 'k-amber' }
+    { label:'Expedientes totales', value: total, sub: `${completados} completados · ${pendientes} en proceso`, cls:'k-navy' },
+    { label:'Monto total adjudicado', value: '$' + formatNum(totalAdj), sub: 'Precio referencia: $' + formatNum(totalRef), cls:'k-blue' },
+    { label:'Ahorro logrado', value: '$' + formatNum(ahorro), sub: pctAhorro.toFixed(1) + '% sobre precio de referencia', cls:'k-green' },
+    { label:'Completados', value: completados, sub: ((completados/total)*100).toFixed(0) + '% de efectividad', cls:'k-amber' },
+    { label:'Tipo más frecuente', value: tipoMasFrecuente ? tipoMasFrecuente[1] : '-', sub: tipoMasFrecuente ? tipoMasFrecuente[0] : '', cls:'k-red' },
   ];
 
   document.getElementById('kpi-row').innerHTML = kpiData.map(k => `
@@ -724,56 +709,87 @@ function renderKPIs() {
 }
 
 function formatNum(n) {
-  return n.toLocaleString('es-PA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+  if (n >= 1000) return n.toLocaleString('es-PA', {minimumFractionDigits:0, maximumFractionDigits:0});
+  return n.toFixed(2);
 }
 
+/* ────────────────────────────────
+   GRÁFICOS DE CHART.JS
+──────────────────────────────── */
+const PALETTE = ['#1a3260','#378add','#1a7a4a','#d97a00','#b03030','#5b3da0','#2a8a80','#8a3a60'];
+
 function renderCharts() {
-  // Gráfico Tipo Procedimiento
+  // Chart 1: Tipo de procedimiento
   const tipoMap = {};
   allRows.forEach(r => {
-    const t = col(r, 'tipo') || 'No especificado';
-    tipoMap[t] = (tipoMap[t] || 0) + (parseMoney(col(r, 'adj')) || parseMoney(col(r, 'ref')) || 0);
+    const t = col(r,'tipo','procedimiento','modalidad') || 'Otro';
+    const v = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')) ||
+              parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')) || 1;
+    tipoMap[t] = (tipoMap[t]||0) + v;
   });
   const tipoLabels = Object.keys(tipoMap);
-  const tipoData = tipoLabels.map(k => tipoMap[k]);
+  const tipoData   = tipoLabels.map(k => tipoMap[k]);
   const tipoColors = PALETTE.slice(0, tipoLabels.length);
 
   destroyChart('chartTipo');
   charts.tipo = new Chart(document.getElementById('chartTipo'), {
     type: 'doughnut',
-    data: { labels: tipoLabels, datasets: [{ data: tipoData, backgroundColor: tipoColors, borderColor: '#fff', borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+    data: { labels: tipoLabels, datasets: [{ data: tipoData, backgroundColor: tipoColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString('es-PA') } } }
+    }
   });
-  document.getElementById('leg-tipo').innerHTML = tipoLabels.map((l, i) =>
+  document.getElementById('leg-tipo').innerHTML = tipoLabels.map((l,i) =>
     `<span class="leg-item"><span class="leg-swatch" style="background:${tipoColors[i]}"></span>${l}</span>`
   ).join('');
 
-  // Gráfico Estado
+  // Chart 2: Estado Actual
   const estadoMap = {};
   allRows.forEach(r => {
-    const s = col(r, 'estado') || 'Sin estado';
-    estadoMap[s] = (estadoMap[s] || 0) + 1;
+    const s = col(r,'estado','estatus','status') || 'Sin estado';
+    estadoMap[s] = (estadoMap[s]||0) + 1;
   });
-  const estLabels = Object.keys(estadoMap);
-  const estData = estLabels.map(k => estadoMap[k]);
+  const estLabels = Object.keys(estadoMap).sort((a,b) => estadoMap[b]-estadoMap[a]);
+  const estData   = estLabels.map(k => estadoMap[k]);
+  const estColors = estLabels.map(l => {
+    const low = l.toLowerCase();
+    if (low.includes('complet')||low.includes('adjudic')) return '#1a7a4a';
+    if (low.includes('revis')||low.includes('proceso')||low.includes('propuesta')) return '#d97a00';
+    if (low.includes('pend')||low.includes('espera')||low.includes('trámite')) return '#378add';
+    return '#8aa0bb';
+  });
 
   destroyChart('chartEstado');
   charts.estado = new Chart(document.getElementById('chartEstado'), {
     type: 'bar',
-    data: { labels: estLabels, datasets: [{ data: estData, backgroundColor: '#378add', borderRadius: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    data: { labels: estLabels, datasets: [{ data: estData, backgroundColor: estColors, borderRadius: 4, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' expedientes' } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 30 } },
+        y: { beginAtZero: true, grid: { color: '#d6e4f7' }, ticks: { stepSize: 1, font: { size: 10 } } }
+      }
+    }
   });
+  document.getElementById('leg-estado').innerHTML = estLabels.map((l,i) =>
+    `<span class="leg-item"><span class="leg-swatch" style="background:${estColors[i]}"></span>${l} (${estData[i]})</span>`
+  ).join('');
 
-  // Gráfico Unidad
+  // Chart 3: Precios por Unidad Ejecutora
   const unidadRef = {}; const unidadAdj = {};
   allRows.forEach(r => {
-    const u = col(r, 'unidad') || 'Otras';
-    unidadRef[u] = (unidadRef[u] || 0) + parseMoney(col(r, 'ref'));
-    unidadAdj[u] = (unidadAdj[u] || 0) + parseMoney(col(r, 'adj'));
+    const u = col(r,'unidad','departamento','area','dependencia','ejecutora') || 'Sin unidad';
+    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
+    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
   });
-  const uLabels = Object.keys(unidadRef).slice(0, 6);
+  const uLabels = Object.keys(unidadRef).sort((a,b) => unidadRef[b]-unidadRef[a]).slice(0,8);
   const uRef = uLabels.map(k => unidadRef[k]);
   const uAdj = uLabels.map(k => unidadAdj[k]);
+  const barH = Math.max(uLabels.length * 42 + 60, 200);
+  document.getElementById('chart-unidad-wrap').style.height = barH + 'px';
 
   destroyChart('chartUnidad');
   charts.unidad = new Chart(document.getElementById('chartUnidad'), {
@@ -781,68 +797,112 @@ function renderCharts() {
     data: {
       labels: uLabels,
       datasets: [
-        { label: 'Referencia', data: uRef, backgroundColor: 'rgba(55,138,221,0.3)', borderColor: '#378add', borderWidth: 1 },
-        { label: 'Adjudicado', data: uAdj, backgroundColor: '#1a7a4a' }
+        { label: 'Precio referencia', data: uRef, backgroundColor: 'rgba(55,138,221,0.25)', borderColor: '#378add', borderWidth: 1, borderRadius: 3 },
+        { label: 'Precio adjudicado', data: uAdj, backgroundColor: 'rgba(26,122,74,0.6)', borderColor: '#1a7a4a', borderWidth: 1, borderRadius: 3 }
       ]
     },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.x.toLocaleString('es-PA')}` } }
+      },
+      scales: {
+        x: { grid: { color: '#d6e4f7' }, ticks: { font: { size: 10 }, callback: v => '$' + (v>=1000?(v/1000).toFixed(0)+'k':v) } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
   });
 }
-
-const PALETTE = ['#1a3260', '#378add', '#1a7a4a', '#d97a00', '#b03030'];
 
 function destroyChart(id) {
   const existing = Chart.getChart(id);
   if (existing) existing.destroy();
 }
 
+/* ────────────────────────────────
+   TABLA DINÁMICA DE REGISTROS
+──────────────────────────────── */
 function renderTable() {
-  const q = (document.getElementById('search-inp').value || '').toLowerCase();
-  const filTipo = document.getElementById('fil-tipo').value;
-  const filEst = document.getElementById('fil-estado').value;
-  const filUnid = document.getElementById('fil-unidad').value;
+  if (!allRows.length) return;
+  const q       = (document.getElementById('search-inp').value||'').toLowerCase();
+  const filTipo  = document.getElementById('fil-tipo').value;
+  const filEst   = document.getElementById('fil-estado').value;
+  const filUnid  = document.getElementById('fil-unidad').value;
 
   const filtered = allRows.filter(r => {
-    if (filTipo && col(r, 'tipo') !== filTipo) return false;
-    if (filEst && col(r, 'estado') !== filEst) return false;
-    if (filUnid && col(r, 'unidad') !== filUnid) return false;
-    if (q) {
-      const matchText = `${col(r, 'req')} ${col(r, 'desc')} ${col(r, 'prov')}`.toLowerCase();
-      if (!matchText.includes(q)) return false;
-    }
+    const req  = col(r,'req','requisicion','numero','nro','expediente');
+    const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien');
+    const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista');
+    const tipo  = col(r,'tipo','procedimiento','modalidad');
+    const est   = col(r,'estado','estatus','status');
+    const unid  = col(r,'unidad','departamento','area','dependencia','ejecutora');
+
+    if (filTipo && tipo !== filTipo) return false;
+    if (filEst  && est  !== filEst)  return false;
+    if (filUnid && unid !== filUnid) return false;
+    if (q && !`${req} ${desc} ${prov}`.toLowerCase().includes(q)) return false;
     return true;
   });
 
-  document.getElementById('row-count').textContent = `${filtered.length} de ${allRows.length} expedientes`;
+  document.getElementById('row-count').textContent = filtered.length + ' de ' + allRows.length + ' registros';
 
   const tbody = document.getElementById('tbl-body');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;">No se encontraron registros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-light)">Sin resultados para los filtros aplicados.</td></tr>';
     return;
   }
 
   tbody.innerHTML = filtered.map((r, i) => {
-    const ref = parseMoney(col(r, 'ref'));
-    const adj = parseMoney(col(r, 'adj'));
+    const req  = col(r,'req','requisicion','numero','nro','expediente') || '—';
+    const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien') || '—';
+    const unid = col(r,'unidad','departamento','area','dependencia','ejecutora') || '—';
+    const tipo = col(r,'tipo','procedimiento','modalidad') || '—';
+    const ref  = parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
+    const adj  = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
+    const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista') || '—';
+    const est  = col(r,'estado','estatus','status') || '—';
+
+    const estClass = (() => {
+      const low = est.toLowerCase();
+      if (low.includes('complet')||low.includes('adjudic')) return 'tag-green';
+      if (low.includes('revis')||low.includes('propuesta')) return 'tag-amber';
+      if (low.includes('dgcp')||low.includes('aprob')||low.includes('trámite')) return 'tag-blue';
+      if (low.includes('espera')) return 'tag-navy';
+      return 'tag-amber';
+    })();
+
+    const tipoClass = (() => {
+      const low = tipo.toLowerCase();
+      if (low.includes('menor')) return 'tag-green';
+      if (low.includes('excep')) return 'tag-navy';
+      if (low.includes('convenio')) return 'tag-blue';
+      if (low.includes('licit')) return 'tag-red';
+      return 'tag-navy';
+    })();
+
     return `<tr>
-      <td class="mono">${i + 1}</td>
-      <td class="mono">${col(r, 'req') || '—'}</td>
-      <td style="max-width:260px;">${col(r, 'desc') || '—'}</td>
-      <td>${col(r, 'unidad') || '—'}</td>
-      <td><span class="tag tag-navy">${col(r, 'tipo') || '—'}</span></td>
-      <td class="amount">${ref ? 'B/. ' + formatNum(ref) : '—'}</td>
-      <td class="amount">${adj ? 'B/. ' + formatNum(adj) : '—'}</td>
-      <td>${col(r, 'prov') || '—'}</td>
-      <td><span class="tag tag-green">${col(r, 'estado') || '—'}</span></td>
+      <td class="mono">${i+1}</td>
+      <td class="mono">${req}</td>
+      <td style="max-width:220px;font-size:12px">${desc}</td>
+      <td style="font-size:11px;color:var(--text-mid)">${unid}</td>
+      <td><span class="tag ${tipoClass}">${tipo}</span></td>
+      <td class="amount">${ref ? '$'+ref.toLocaleString('es-PA') : '—'}</td>
+      <td class="amount">${adj ? '$'+adj.toLocaleString('es-PA') : '—'}</td>
+      <td style="font-size:11px">${prov}</td>
+      <td><span class="tag ${estClass}">${est}</span></td>
     </tr>`;
   }).join('');
 
-  const totalAdj = filtered.reduce((s, r) => s + parseMoney(col(r, 'adj')), 0);
-  const totalRef = filtered.reduce((s, r) => s + parseMoney(col(r, 'ref')), 0);
-  document.getElementById('status-left').textContent = `Filtrados: ${filtered.length} | Adjudicado: B/. ${formatNum(totalAdj)}`;
-  document.getElementById('status-right').textContent = `Referencia: B/. ${formatNum(totalRef)} | Ahorro: B/. ${formatNum(totalRef - totalAdj)}`;
+  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')),0);
+  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')),0);
+  document.getElementById('status-left').textContent = filtered.length + ' expedientes · Adj: $' + totalAdj.toLocaleString('es-PA');
+  document.getElementById('status-right').textContent = 'Ref: $' + totalRef.toLocaleString('es-PA') + ' · Ahorro: $' + (totalRef-totalAdj).toLocaleString('es-PA');
 }
 
+/* ────────────────────────────────
+   INICIALIZACIÓN AUTOMÁTICA
+──────────────────────────────── */
 loadData();
 setInterval(loadData, 5 * 60 * 1000);
 </script>
