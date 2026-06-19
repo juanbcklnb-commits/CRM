@@ -509,75 +509,73 @@ tbody td {
 </div>
 
 <script>
-// URL de la API de Google Visualization basada en tu ID de documento público
-const SHEET_ID = '1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ';
-const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+// Usamos un proxy CORS transparente para consumir tu CSV publicado directamente
+const CSV_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv');
 
 let allRows = [];
 let charts = {};
 
-/* ────────────────────────────────
-   FETCH + CORRECCIÓN DE PARSEO JSON
-──────────────────────────────── */
 async function loadData() {
   document.getElementById('error-box').style.display = 'none';
   try {
-    const res = await fetch(JSON_URL + '&_t=' + Date.now());
+    const res = await fetch(CSV_URL + '&_t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     
     const text = await res.text();
-    
-    // Limpieza estricta del wrapper de Google
-    const jsonStart = text.indexOf('{');
-    const jsonEnd = text.lastIndexOf('}') + 1;
-    if (jsonStart === -1 || jsonEnd === -1) throw new Error('La respuesta de Google Sheets no tiene un formato válido.');
-    
-    const jsonData = JSON.parse(text.substring(jsonStart, jsonEnd));
-    allRows = parseGoogleJson(jsonData);
+    allRows = parseCSV(text);
     
     document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PA');
-    const dbg = document.getElementById('debug-cols');
-    if (dbg && allRows.length) { dbg.style.display = 'block'; }
     renderAll();
   } catch(e) {
     console.error(e);
     const eb = document.getElementById('error-box');
-    eb.textContent = 'Error de sincronización: ' + e.message + '. Asegúrese de que el Sheet esté compartido públicamente.';
+    eb.textContent = 'Error de sincronización: ' + e.message + '. Intente refrescar la página.';
     eb.style.display = 'block';
     document.getElementById('last-update').textContent = 'Error al actualizar';
   }
 }
 
-function parseGoogleJson(googleData) {
-  if (!googleData.table || !googleData.table.cols || !googleData.table.rows) return [];
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+  if (lines.length === 0) return [];
   
-  const table = googleData.table;
-  // Mapeamos los nombres de las columnas limpiando espacios
-  const headers = table.cols.map(col => col.label ? col.label.trim() : '');
-  
-  return table.rows.map(row => {
-    const obj = {};
-    if (!row || !row.c) return obj;
-    
-    row.c.forEach((cell, idx) => {
-      const headerName = headers[idx] || `Columna_${idx}`;
-      if (cell && cell.v !== null && cell.v !== undefined) {
-        // Usamos el valor formateado .f (con comas/monedas fijas del Sheet) si existe, sino el crudo .v
-        obj[headerName] = String(cell.f !== undefined ? cell.f : cell.v).trim();
+  // Procesador básico de líneas CSV respetando comillas
+  const parseLine = (line) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[char];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
       } else {
-        obj[headerName] = '';
+        current += char;
       }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const headers = parseLine(lines[0]);
+  const rows = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseLine(lines[i]);
+    const obj = {};
+    headers.forEach((header, idx) => {
+      obj[header] = values[idx] !== undefined ? values[idx] : '';
     });
-    return obj;
-  });
+    rows.push(obj);
+  }
+  return rows;
 }
 
 function parseMoney(val) {
   if (!val) return 0;
-  // Remueve de forma segura $, espacios y caracteres no numéricos excepto puntos y comas
   let clean = val.replace(/[$,\s]/g, '');
-  
-  // Normalización de separadores de miles del formato regional de Panamá/EE.UU.
   if (clean.includes(',') && clean.includes('.')) {
     if (clean.indexOf('.') < clean.indexOf(',')) {
       clean = clean.replace(/\./g, '').replace(',', '.');
@@ -594,9 +592,6 @@ function parseMoney(val) {
   return parseFloat(clean) || 0;
 }
 
-/* ────────────────────────────────
-   DETECCIÓN FLEXIBLE DE ENCABEZADOS
-──────────────────────────────── */
 function col(row, ...candidates) {
   if (!row) return '';
   const keys = Object.keys(row);
@@ -607,21 +602,12 @@ function col(row, ...candidates) {
   return '';
 }
 
-/* ────────────────────────────────
-   CONTROLES DE RENDERIZADO
-──────────────────────────────── */
 function renderAll() {
   if (!allRows.length) return;
-
-  const keys = Object.keys(allRows[0]);
-  const dbg = document.getElementById('debug-cols');
-  if (dbg) dbg.textContent = 'Columnas activas: ' + keys.join(' | ');
-
   populateFilters();
   renderKPIs();
   renderCharts();
   renderTable();
-
   document.getElementById('charts-row').style.display = 'grid';
 }
 
@@ -869,9 +855,6 @@ function renderTable() {
   document.getElementById('status-right').textContent = 'Ref: $' + totalRef.toLocaleString('es-PA') + ' · Ahorro: $' + (totalRef-totalAdj).toLocaleString('es-PA');
 }
 
-/* ────────────────────────────────
-   INIT
-──────────────────────────────── */
 loadData();
 setInterval(loadData, 5 * 60 * 1000);
 </script>
