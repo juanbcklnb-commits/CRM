@@ -413,6 +413,7 @@ tbody td {
 
 <div class="page">
 
+  <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-brand">
       <div class="org">Lotería Nacional de Beneficencia</div>
@@ -432,14 +433,17 @@ tbody td {
     </div>
   </div>
 
+  <!-- ERROR BOX -->
   <div id="error-box" class="error-box" style="display:none;"></div>
   <div id="debug-cols" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-light);margin-bottom:8px;word-break:break-all;display:none;"></div>
 
+  <!-- KPIs -->
   <div class="sec-label">Indicadores generales</div>
   <div class="kpi-row" id="kpi-row">
     <div class="loading-overlay" style="grid-column:1/-1;padding:30px"><div class="spinner"></div><span style="font-size:12px;color:var(--text-light)">Conectando con Google Sheets…</span></div>
   </div>
 
+  <!-- CHARTS -->
   <div class="sec-label">Distribución de procedimientos</div>
   <div class="charts-row" id="charts-row" style="display:none;">
     <div class="card">
@@ -458,6 +462,7 @@ tbody td {
     </div>
   </div>
 
+  <!-- TABLE -->
   <div class="table-section">
     <div class="sec-label">Registro de expedientes</div>
     <div class="tbl-filters">
@@ -509,7 +514,7 @@ tbody td {
 </div>
 
 <script>
-// Usamos un proxy CORS transparente para consumir tu CSV publicado directamente
+// Proxy CORS transparente y enlace seguro al CSV
 const CSV_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv');
 
 let allRows = [];
@@ -539,13 +544,12 @@ function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
   if (lines.length === 0) return [];
   
-  // Procesador básico de líneas CSV respetando comillas
   const parseLine = (line) => {
     const result = [];
     let current = '';
     let inQuotes = false;
     for (let i = 0; i < line.length; i++) {
-      const char = line[char];
+      const char = line[i]; // CORREGIDO
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -632,6 +636,7 @@ function fillSelect(id, values, placeholder) {
   });
 }
 
+// Renderizado de KPIs e Indicadores
 function renderKPIs() {
   const total = allRows.length;
   const adjValues = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')));
@@ -680,6 +685,7 @@ function formatNum(n) {
 
 const PALETTE = ['#1a3260','#378add','#1a7a4a','#d97a00','#b03030','#5b3da0','#2a8a80','#8a3a60'];
 
+// Renderizado de Gráficos de ChartJS
 function renderCharts() {
   const tipoMap = {};
   allRows.forEach(r => {
@@ -778,6 +784,7 @@ function destroyChart(id) {
   if (existing) existing.destroy();
 }
 
+// Renderizado de la tabla dinámica
 function renderTable() {
   if (!allRows.length) return;
   const q = (document.getElementById('search-inp').value||'').toLowerCase();
