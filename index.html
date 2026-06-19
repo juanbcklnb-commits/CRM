@@ -407,13 +407,26 @@ tbody td {
   font-size: 12px;
   margin-bottom: 16px;
 }
+
+/* ── Footer ── */
+footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-light);
+}
 </style>
 </head>
 <body>
 
 <div class="page">
 
-  <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-brand">
       <div class="org">Lotería Nacional de Beneficencia</div>
@@ -433,36 +446,32 @@ tbody td {
     </div>
   </div>
 
-  <!-- ERROR BOX -->
   <div id="error-box" class="error-box" style="display:none;"></div>
   <div id="debug-cols" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-light);margin-bottom:8px;word-break:break-all;display:none;"></div>
 
-  <!-- KPIs -->
   <div class="sec-label">Indicadores generales</div>
   <div class="kpi-row" id="kpi-row">
     <div class="loading-overlay" style="grid-column:1/-1;padding:30px"><div class="spinner"></div><span style="font-size:12px;color:var(--text-light)">Conectando con Google Sheets…</span></div>
   </div>
 
-  <!-- CHARTS -->
   <div class="sec-label">Distribución de procedimientos</div>
   <div class="charts-row" id="charts-row" style="display:none;">
     <div class="card">
       <div class="card-title">Por tipo de procedimiento</div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chartTipo"></canvas></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartTipo" role="img" aria-label="Distribución de montos por tipo de procedimiento de compra">Cargando…</canvas></div>
       <div class="chart-legend" id="leg-tipo"></div>
     </div>
     <div class="card">
       <div class="card-title">Por estado actual</div>
-      <div class="chart-wrap" style="height:180px"><canvas id="chartEstado"></canvas></div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartEstado" role="img" aria-label="Cantidad de expedientes por estado">Cargando…</canvas></div>
       <div class="chart-legend" id="leg-estado"></div>
     </div>
     <div class="card">
       <div class="card-title">Precio referencia vs. adjudicado por unidad</div>
-      <div class="chart-wrap" id="chart-unidad-wrap"><canvas id="chartUnidad"></canvas></div>
+      <div class="chart-wrap" id="chart-unidad-wrap"><canvas id="chartUnidad" role="img" aria-label="Comparativa de precios por unidad ejecutora">Cargando…</canvas></div>
     </div>
   </div>
 
-  <!-- TABLE -->
   <div class="table-section">
     <div class="sec-label">Registro de expedientes</div>
     <div class="tbl-filters">
@@ -514,120 +523,140 @@ tbody td {
 </div>
 
 <script>
-// Proxy CORS transparente y enlace seguro al CSV
-const CSV_URL = 'https://corsproxy.io/?' + encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv');
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv';
 
 let allRows = [];
 let charts = {};
 
+/* ────────────────────────────────
+   CSV FETCH + PARSE OPTIMIZADO
+──────────────────────────────── */
 async function loadData() {
   document.getElementById('error-box').style.display = 'none';
   try {
     const res = await fetch(CSV_URL + '&_t=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    
     const text = await res.text();
     allRows = parseCSV(text);
-    
     document.getElementById('last-update').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-PA');
+    const dbg = document.getElementById('debug-cols');
+    if (dbg && allRows.length) { dbg.style.display = 'block'; }
     renderAll();
   } catch(e) {
-    console.error(e);
     const eb = document.getElementById('error-box');
-    eb.textContent = 'Error de sincronización: ' + e.message + '. Intente refrescar la página.';
+    eb.textContent = 'No se pudo cargar la hoja de cálculo. Verifique la conexión o los permisos del documento. (' + e.message + ')';
     eb.style.display = 'block';
     document.getElementById('last-update').textContent = 'Error al actualizar';
   }
 }
 
 function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-  if (lines.length === 0) return [];
-  
-  const parseLine = (line) => {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i]; // CORREGIDO
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim());
-    return result;
-  };
-
-  const headers = parseLine(lines[0]);
   const rows = [];
+  let currentField = '';
+  let inQuotes = false;
+  let currentRow = [];
   
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseLine(lines[i]);
-    const obj = {};
-    headers.forEach((header, idx) => {
-      obj[header] = values[idx] !== undefined ? values[idx] : '';
-    });
-    rows.push(obj);
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    const nextC = text[i + 1];
+    
+    if (c === '"') {
+      if (inQuotes && nextC === '"') {
+        currentField += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (c === ',' && !inQuotes) {
+      currentRow.push(currentField.trim());
+      currentField = '';
+    } else if ((c === '\r' || c === '\n') && !inQuotes) {
+      if (c === '\r' && nextC === '\n') { i++; }
+      currentRow.push(currentField.trim());
+      if (currentRow.length > 0 && currentRow.some(v => v !== '')) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentField = '';
+    } else {
+      currentField += c;
+    }
   }
-  return rows;
+  
+  if (currentField || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some(v => v !== '')) rows.push(currentRow);
+  }
+
+  if (rows.length < 2) return [];
+  
+  const headers = rows[0];
+  const resultObjects = [];
+  
+  for (let i = 1; i < rows.length; i++) {
+    const vals = rows[i];
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = (vals[idx] || ''); });
+    resultObjects.push(obj);
+  }
+  
+  return resultObjects;
 }
 
 function parseMoney(val) {
   if (!val) return 0;
   let clean = val.replace(/[$,\s]/g, '');
-  if (clean.includes(',') && clean.includes('.')) {
-    if (clean.indexOf('.') < clean.indexOf(',')) {
-      clean = clean.replace(/\./g, '').replace(',', '.');
-    } else {
-      clean = clean.replace(/,/g, '');
-    }
-  } else if (clean.includes(',') && !clean.includes('.')) {
-    if (clean.split(',')[1].length === 2) {
-      clean = clean.replace(',', '.');
-    } else {
-      clean = clean.replace(/,/g, '');
-    }
-  }
+  clean = clean.replace(/,/g, '');
   return parseFloat(clean) || 0;
 }
 
+/* ────────────────────────────────
+   DETECCIÓN DE COLUMNAS FLEXIBLE
+──────────────────────────────── */
 function col(row, ...candidates) {
-  if (!row) return '';
-  const keys = Object.keys(row);
   for (const c of candidates) {
+    const keys = Object.keys(row);
     const match = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
     if (match && row[match]) return row[match];
   }
   return '';
 }
 
+/* ────────────────────────────────
+   RENDER TOTAL
+──────────────────────────────── */
 function renderAll() {
   if (!allRows.length) return;
+
+  const keys = Object.keys(allRows[0]);
+  console.log('Columnas detectadas:', keys);
+
+  const dbg = document.getElementById('debug-cols');
+  if (dbg) dbg.textContent = 'Columnas: ' + keys.join(' | ');
+
   populateFilters();
   renderKPIs();
   renderCharts();
   renderTable();
+
   document.getElementById('charts-row').style.display = 'grid';
 }
 
+/* ────────────────────────────────
+   FILTROS DINÁMICOS
+──────────────────────────────── */
 function populateFilters() {
-  const tipos = [...new Set(allRows.map(r => col(r,'tipo','procedimiento','modalidad')).filter(Boolean))].sort();
+  const tipos   = [...new Set(allRows.map(r => col(r,'tipo','procedimiento','modalidad')).filter(Boolean))].sort();
   const estados = [...new Set(allRows.map(r => col(r,'estado','estatus','status')).filter(Boolean))].sort();
   const unidades = [...new Set(allRows.map(r => col(r,'unidad','departamento','area','dependencia','ejecutora')).filter(Boolean))].sort();
 
-  fillSelect('fil-tipo', tipos, 'Todos los tipos');
+  fillSelect('fil-tipo',   tipos,   'Todos los tipos');
   fillSelect('fil-estado', estados, 'Todos los estados');
-  fillSelect('fil-unidad', unidades, 'Todas las unidades');
+  fillSelect('fil-unidad', unidades,'Todas las unidades');
 }
 
 function fillSelect(id, values, placeholder) {
   const sel = document.getElementById(id);
-  if (!sel) return;
   sel.innerHTML = `<option value="">${placeholder}</option>`;
   values.forEach(v => {
     const o = document.createElement('option');
@@ -636,11 +665,13 @@ function fillSelect(id, values, placeholder) {
   });
 }
 
-// Renderizado de KPIs e Indicadores
+/* ────────────────────────────────
+   INDICADORES GENERALES (KPIs)
+──────────────────────────────── */
 function renderKPIs() {
   const total = allRows.length;
-  const adjValues = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')));
-  const refValues = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref')));
+  const adjValues   = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')));
+  const refValues   = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')));
   const totalAdj = adjValues.reduce((a,b)=>a+b,0);
   const totalRef = refValues.reduce((a,b)=>a+b,0);
   const ahorro = totalRef - totalAdj;
@@ -683,19 +714,22 @@ function formatNum(n) {
   return n.toFixed(2);
 }
 
+/* ────────────────────────────────
+   GRÁFICOS DE CHART.JS
+──────────────────────────────── */
 const PALETTE = ['#1a3260','#378add','#1a7a4a','#d97a00','#b03030','#5b3da0','#2a8a80','#8a3a60'];
 
-// Renderizado de Gráficos de ChartJS
 function renderCharts() {
+  // Chart 1: Tipo de procedimiento
   const tipoMap = {};
   allRows.forEach(r => {
     const t = col(r,'tipo','procedimiento','modalidad') || 'Otro';
-    const v = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')) ||
-              parseMoney(col(r,'ref','referencia','precio ref','monto ref')) || 1;
+    const v = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')) ||
+              parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')) || 1;
     tipoMap[t] = (tipoMap[t]||0) + v;
   });
   const tipoLabels = Object.keys(tipoMap);
-  const tipoData = tipoLabels.map(k => tipoMap[k]);
+  const tipoData   = tipoLabels.map(k => tipoMap[k]);
   const tipoColors = PALETTE.slice(0, tipoLabels.length);
 
   destroyChart('chartTipo');
@@ -711,18 +745,19 @@ function renderCharts() {
     `<span class="leg-item"><span class="leg-swatch" style="background:${tipoColors[i]}"></span>${l}</span>`
   ).join('');
 
+  // Chart 2: Estado Actual
   const estadoMap = {};
   allRows.forEach(r => {
     const s = col(r,'estado','estatus','status') || 'Sin estado';
     estadoMap[s] = (estadoMap[s]||0) + 1;
   });
   const estLabels = Object.keys(estadoMap).sort((a,b) => estadoMap[b]-estadoMap[a]);
-  const estData = estLabels.map(k => estadoMap[k]);
+  const estData   = estLabels.map(k => estadoMap[k]);
   const estColors = estLabels.map(l => {
     const low = l.toLowerCase();
     if (low.includes('complet')||low.includes('adjudic')) return '#1a7a4a';
-    if (low.includes('revis')||low.includes('proceso')) return '#d97a00';
-    if (low.includes('pend')||low.includes('espera')) return '#378add';
+    if (low.includes('revis')||low.includes('proceso')||low.includes('propuesta')) return '#d97a00';
+    if (low.includes('pend')||low.includes('espera')||low.includes('trámite')) return '#378add';
     return '#8aa0bb';
   });
 
@@ -743,11 +778,12 @@ function renderCharts() {
     `<span class="leg-item"><span class="leg-swatch" style="background:${estColors[i]}"></span>${l} (${estData[i]})</span>`
   ).join('');
 
+  // Chart 3: Precios por Unidad Ejecutora
   const unidadRef = {}; const unidadAdj = {};
   allRows.forEach(r => {
     const u = col(r,'unidad','departamento','area','dependencia','ejecutora') || 'Sin unidad';
-    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
-    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj'));
+    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
+    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
   });
   const uLabels = Object.keys(unidadRef).sort((a,b) => unidadRef[b]-unidadRef[a]).slice(0,8);
   const uRef = uLabels.map(k => unidadRef[k]);
@@ -784,24 +820,26 @@ function destroyChart(id) {
   if (existing) existing.destroy();
 }
 
-// Renderizado de la tabla dinámica
+/* ────────────────────────────────
+   TABLA DINÁMICA DE REGISTROS
+──────────────────────────────── */
 function renderTable() {
   if (!allRows.length) return;
-  const q = (document.getElementById('search-inp').value||'').toLowerCase();
-  const filTipo = document.getElementById('fil-tipo').value;
-  const filEst = document.getElementById('fil-estado').value;
-  const filUnid = document.getElementById('fil-unidad').value;
+  const q       = (document.getElementById('search-inp').value||'').toLowerCase();
+  const filTipo  = document.getElementById('fil-tipo').value;
+  const filEst   = document.getElementById('fil-estado').value;
+  const filUnid  = document.getElementById('fil-unidad').value;
 
   const filtered = allRows.filter(r => {
-    const req = col(r,'req','requisicion','numero','nro','expediente');
+    const req  = col(r,'req','requisicion','numero','nro','expediente');
     const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien');
     const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista');
-    const tipo = col(r,'tipo','procedimiento','modalidad');
-    const est = col(r,'estado','estatus','status');
-    const unid = col(r,'unidad','departamento','area','dependencia','ejecutora');
+    const tipo  = col(r,'tipo','procedimiento','modalidad');
+    const est   = col(r,'estado','estatus','status');
+    const unid  = col(r,'unidad','departamento','area','dependencia','ejecutora');
 
     if (filTipo && tipo !== filTipo) return false;
-    if (filEst && est !== filEst) return false;
+    if (filEst  && est  !== filEst)  return false;
     if (filUnid && unid !== filUnid) return false;
     if (q && !`${req} ${desc} ${prov}`.toLowerCase().includes(q)) return false;
     return true;
@@ -816,20 +854,20 @@ function renderTable() {
   }
 
   tbody.innerHTML = filtered.map((r, i) => {
-    const req = col(r,'req','requisicion','numero','nro','expediente') || '—';
+    const req  = col(r,'req','requisicion','numero','nro','expediente') || '—';
     const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien') || '—';
     const unid = col(r,'unidad','departamento','area','dependencia','ejecutora') || '—';
     const tipo = col(r,'tipo','procedimiento','modalidad') || '—';
-    const ref = parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
-    const adj = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj'));
+    const ref  = parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
+    const adj  = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
     const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista') || '—';
-    const est = col(r,'estado','estatus','status') || '—';
+    const est  = col(r,'estado','estatus','status') || '—';
 
     const estClass = (() => {
       const low = est.toLowerCase();
       if (low.includes('complet')||low.includes('adjudic')) return 'tag-green';
-      if (low.includes('revis')) return 'tag-amber';
-      if (low.includes('dgcp')||low.includes('aprob')) return 'tag-blue';
+      if (low.includes('revis')||low.includes('propuesta')) return 'tag-amber';
+      if (low.includes('dgcp')||low.includes('aprob')||low.includes('trámite')) return 'tag-blue';
       if (low.includes('espera')) return 'tag-navy';
       return 'tag-amber';
     })();
@@ -856,12 +894,15 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj')),0);
-  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref')),0);
+  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')),0);
+  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')),0);
   document.getElementById('status-left').textContent = filtered.length + ' expedientes · Adj: $' + totalAdj.toLocaleString('es-PA');
   document.getElementById('status-right').textContent = 'Ref: $' + totalRef.toLocaleString('es-PA') + ' · Ahorro: $' + (totalRef-totalAdj).toLocaleString('es-PA');
 }
 
+/* ────────────────────────────────
+   INICIALIZACIÓN AUTOMÁTICA
+──────────────────────────────── */
 loadData();
 setInterval(loadData, 5 * 60 * 1000);
 </script>
