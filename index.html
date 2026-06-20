@@ -32,9 +32,7 @@
   --blue-mid: #1a5ab8;
   --blue-bg: #e8f0fd;
 }
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
   background: var(--bg);
   color: var(--text);
@@ -43,13 +41,11 @@ body {
   line-height: 1.5;
   min-height: 100vh;
 }
-
 .page {
   max-width: 1320px;
   margin: 0 auto;
   padding: 0 24px 64px;
 }
-
 /* ── Header ── */
 .topbar {
   background: var(--navy);
@@ -61,14 +57,12 @@ body {
   gap: 24px;
   flex-wrap: wrap;
 }
-
 .topbar-brand {
   padding: 20px 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .topbar-brand .org {
   font-size: 10px;
   font-weight: 500;
@@ -77,24 +71,20 @@ body {
   color: var(--navy-pale);
   opacity: 0.7;
 }
-
 .topbar-brand h1 {
   font-size: 18px;
   font-weight: 600;
   color: #ffffff;
   letter-spacing: -0.3px;
 }
-
 .topbar-brand h1 span {
   color: #7eb8f5;
 }
-
 .topbar-meta {
   display: flex;
   align-items: center;
   gap: 20px;
 }
-
 .live-badge {
   display: flex;
   align-items: center;
@@ -107,7 +97,6 @@ body {
   color: rgba(255,255,255,0.8);
   font-family: 'DM Mono', monospace;
 }
-
 .live-dot {
   width: 6px;
   height: 6px;
@@ -115,12 +104,10 @@ body {
   border-radius: 50%;
   animation: blink 2s infinite;
 }
-
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-
 .refresh-btn {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
@@ -135,10 +122,8 @@ body {
   gap: 6px;
   transition: background 0.15s;
 }
-
 .refresh-btn:hover { background: rgba(255,255,255,0.18); }
 .refresh-btn svg { width: 13px; height: 13px; }
-
 /* ── KPI Row ── */
 .kpi-row {
   display: grid;
@@ -146,7 +131,6 @@ body {
   gap: 12px;
   margin-bottom: 28px;
 }
-
 .kpi {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -155,20 +139,17 @@ body {
   position: relative;
   overflow: hidden;
 }
-
 .kpi::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
 }
-
 .kpi.k-navy::before  { background: var(--navy); }
 .kpi.k-blue::before  { background: #378add; }
 .kpi.k-green::before { background: #1a7a4a; }
 .kpi.k-amber::before { background: #d97a00; }
 .kpi.k-red::before   { background: #b03030; }
-
 .kpi-label {
   font-size: 10px;
   font-weight: 600;
@@ -177,7 +158,6 @@ body {
   color: var(--text-light);
   margin-bottom: 8px;
 }
-
 .kpi-value {
   font-size: 28px;
   font-weight: 600;
@@ -186,14 +166,12 @@ body {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
-
 .kpi-sub {
   font-size: 11px;
   color: var(--text-light);
   margin-top: 5px;
   font-family: 'DM Mono', monospace;
 }
-
 /* ── Section label ── */
 .sec-label {
   font-size: 10px;
@@ -206,14 +184,12 @@ body {
   align-items: center;
   gap: 10px;
 }
-
 .sec-label::after {
   content: '';
   flex: 1;
   height: 1px;
   background: var(--border);
 }
-
 /* ── Charts row ── */
 .charts-row {
   display: grid;
@@ -221,22 +197,18 @@ body {
   gap: 14px;
   margin-bottom: 28px;
 }
-
 @media (max-width: 900px) {
   .charts-row { grid-template-columns: 1fr 1fr; }
 }
-
 @media (max-width: 600px) {
   .charts-row { grid-template-columns: 1fr; }
 }
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 18px 20px;
 }
-
 .card-title {
   font-size: 11px;
   font-weight: 600;
@@ -245,11 +217,9 @@ body {
   color: var(--text-light);
   margin-bottom: 14px;
 }
-
 .chart-wrap {
   position: relative;
 }
-
 /* ── Legend ── */
 .chart-legend {
   display: flex;
@@ -257,7 +227,6 @@ body {
   gap: 8px 14px;
   margin-top: 12px;
 }
-
 .leg-item {
   display: flex;
   align-items: center;
@@ -265,17 +234,14 @@ body {
   font-size: 11px;
   color: var(--text-mid);
 }
-
 .leg-swatch {
   width: 9px;
   height: 9px;
   border-radius: 2px;
   flex-shrink: 0;
 }
-
 /* ── Table ── */
 .table-section { margin-bottom: 28px; }
-
 .tbl-filters {
   display: flex;
   gap: 8px;
@@ -283,7 +249,6 @@ body {
   flex-wrap: wrap;
   align-items: center;
 }
-
 .filter-select, .search-input {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -294,28 +259,22 @@ body {
   color: var(--text);
   outline: none;
 }
-
 .filter-select:focus, .search-input:focus {
   border-color: var(--navy-light);
 }
-
 .search-input { width: 220px; }
-
 .tbl-wrap {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
 }
-
 .tbl-scroll { overflow-x: auto; }
-
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12px;
 }
-
 thead th {
   background: var(--navy);
   color: rgba(255,255,255,0.85);
@@ -327,23 +286,18 @@ thead th {
   text-align: left;
   white-space: nowrap;
 }
-
 tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
 }
-
 tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--navy-ghost); }
-
 tbody td {
   padding: 10px 14px;
   color: var(--text);
   vertical-align: middle;
 }
-
 .mono { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--slate); }
-
 .tag {
   display: inline-flex;
   align-items: center;
@@ -354,15 +308,12 @@ tbody td {
   letter-spacing: 0.5px;
   white-space: nowrap;
 }
-
 .tag-green  { background: var(--green-bg);  color: var(--green); }
 .tag-amber  { background: var(--amber-bg);  color: var(--amber); }
 .tag-red    { background: var(--red-bg);    color: var(--red); }
 .tag-navy   { background: var(--navy-ghost); color: var(--navy-mid); }
 .tag-blue   { background: var(--blue-bg);   color: var(--blue-mid); }
-
 .amount { font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
-
 /* ── Status bar ── */
 .status-bar {
   display: flex;
@@ -375,7 +326,6 @@ tbody td {
   color: var(--text-light);
   font-family: 'DM Mono', monospace;
 }
-
 /* ── Loading / Error ── */
 .loading-overlay {
   display: flex;
@@ -386,7 +336,6 @@ tbody td {
   gap: 14px;
   color: var(--text-mid);
 }
-
 .spinner {
   width: 28px;
   height: 28px;
@@ -395,9 +344,7 @@ tbody td {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .error-box {
   background: var(--red-bg);
   border: 1px solid #f0c0c0;
@@ -407,7 +354,48 @@ tbody td {
   font-size: 12px;
   margin-bottom: 16px;
 }
-
+.user-select-dropdown {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+.user-select-dropdown:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.user-select-dropdown option {
+  background: var(--navy-mid);
+  color: #ffffff;
+}
+.chk-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-mid);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+.chk-filter-label:hover {
+  border-color: var(--slate-light);
+  color: var(--text);
+}
+.chk-filter-label input {
+  cursor: pointer;
+}
 /* ── Footer ── */
 footer {
   margin-top: 40px;
@@ -424,15 +412,16 @@ footer {
 </style>
 </head>
 <body>
-
 <div class="page">
-
   <div class="topbar">
     <div class="topbar-brand">
       <div class="org">Lotería Nacional de Beneficencia</div>
       <h1>Dashboard <span>Compras & Proveeduría</span> · 2026</h1>
     </div>
     <div class="topbar-meta">
+      <select id="user-select" class="user-select-dropdown" onchange="onUserChange()">
+        <option value="">Identificarse...</option>
+      </select>
       <div class="live-badge">
         <div class="live-dot"></div>
         <span id="last-update">Cargando…</span>
@@ -445,15 +434,14 @@ footer {
       </button>
     </div>
   </div>
-
   <div id="error-box" class="error-box" style="display:none;"></div>
   <div id="debug-cols" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-light);margin-bottom:8px;word-break:break-all;display:none;"></div>
-
   <div class="sec-label">Indicadores generales</div>
   <div class="kpi-row" id="kpi-row">
     <div class="loading-overlay" style="grid-column:1/-1;padding:30px"><div class="spinner"></div><span style="font-size:12px;color:var(--text-light)">Conectando con Google Sheets…</span></div>
   </div>
-
+  <div id="personal-sec-label" class="sec-label" style="display:none; margin-top:20px;">Mi Actividad</div>
+  <div class="kpi-row" id="personal-kpi-row" style="display:none; margin-bottom:28px;"></div>
   <div class="sec-label">Distribución de procedimientos</div>
   <div class="charts-row" id="charts-row" style="display:none;">
     <div class="card">
@@ -471,7 +459,6 @@ footer {
       <div class="chart-wrap" id="chart-unidad-wrap"><canvas id="chartUnidad" role="img" aria-label="Comparativa de precios por unidad ejecutora">Cargando…</canvas></div>
     </div>
   </div>
-
   <div class="table-section">
     <div class="sec-label">Registro de expedientes</div>
     <div class="tbl-filters">
@@ -485,6 +472,10 @@ footer {
       <select class="filter-select" id="fil-unidad" onchange="renderTable()">
         <option value="">Todas las unidades</option>
       </select>
+      <label id="only-my-exp-label" class="chk-filter-label" style="display:none;">
+        <input type="checkbox" id="only-my-exp-chk" onchange="renderTable()">
+        Ver solo mis expedientes
+      </label>
       <span id="row-count" style="font-size:11px;color:var(--text-light);margin-left:auto;font-family:'DM Mono',monospace;"></span>
     </div>
     <div class="tbl-wrap">
@@ -496,6 +487,7 @@ footer {
               <th>Requisición</th>
               <th>Descripción</th>
               <th>Unidad</th>
+              <th>Funcionario</th>
               <th>Tipo</th>
               <th>Precio Ref.</th>
               <th>Precio Adj.</th>
@@ -504,7 +496,7 @@ footer {
             </tr>
           </thead>
           <tbody id="tbl-body">
-            <tr><td colspan="9"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>
+            <tr><td colspan="10"><div class="loading-overlay"><div class="spinner"></div></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -514,20 +506,15 @@ footer {
       </div>
     </div>
   </div>
-
   <footer>
     <span>Lotería Nacional de Beneficencia · Depto. de Compras y Proveeduría · 2026</span>
     <span>Fuente: Google Sheets (datos en vivo) · Actualización automática cada 5 min.</span>
   </footer>
-
 </div>
-
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv';
-
 let allRows = [];
 let charts = {};
-
 /* ────────────────────────────────
    CSV FETCH + PARSE OPTIMIZADO
 ──────────────────────────────── */
@@ -549,7 +536,6 @@ async function loadData() {
     document.getElementById('last-update').textContent = 'Error al actualizar';
   }
 }
-
 function parseCSV(text) {
   const rows = [];
   let currentField = '';
@@ -587,7 +573,6 @@ function parseCSV(text) {
     currentRow.push(currentField.trim());
     if (currentRow.some(v => v !== '')) rows.push(currentRow);
   }
-
   if (rows.length < 2) return [];
   
   const headers = rows[0];
@@ -602,46 +587,169 @@ function parseCSV(text) {
   
   return resultObjects;
 }
-
 function parseMoney(val) {
   if (!val) return 0;
   let clean = val.replace(/[$,\s]/g, '');
   clean = clean.replace(/,/g, '');
   return parseFloat(clean) || 0;
 }
-
 /* ────────────────────────────────
-   DETECCIÓN DE COLUMNAS FLEXIBLE
+   DETECCIÓN DE COLUMNAS FLEXIBLE Y ROBUSTA
 ──────────────────────────────── */
 function col(row, ...candidates) {
+  const keys = Object.keys(row);
+  
+  // 1. Intentar coincidencia exacta primero
   for (const c of candidates) {
-    const keys = Object.keys(row);
-    const match = keys.find(k => k.toLowerCase().includes(c.toLowerCase()));
-    if (match && row[match]) return row[match];
+    const match = keys.find(k => k.toLowerCase().trim() === c.toLowerCase().trim());
+    if (match && row[match] !== undefined && row[match] !== null && row[match] !== '') {
+      return row[match];
+    }
+  }
+  // 2. Intentar coincidencia parcial con exclusión de colisiones conocidas
+  for (const c of candidates) {
+    const match = keys.find(k => {
+      const kLow = k.toLowerCase();
+      const cLow = c.toLowerCase();
+      if (kLow.includes(cLow)) {
+        // Evitar que 'adj' coincida con 'empresa adjudicada'
+        if (cLow === 'adj' && kLow.includes('empresa')) return false;
+        // Evitar que 'adjudicad' coincida con 'monto de adjudicacion'
+        if (cLow === 'adjudicad' && kLow.includes('monto')) return false;
+        // Evitar que 'ref' coincida con 'funcionario'
+        if (cLow === 'ref' && kLow.includes('funcionario')) return false;
+        return true;
+      }
+      return false;
+    });
+    if (match && row[match] !== undefined && row[match] !== null && row[match] !== '') {
+      return row[match];
+    }
   }
   return '';
 }
-
 /* ────────────────────────────────
-   RENDER TOTAL
+   RENDER TOTAL Y SECCIÓN DE USUARIO
 ──────────────────────────────── */
 function renderAll() {
   if (!allRows.length) return;
-
   const keys = Object.keys(allRows[0]);
   console.log('Columnas detectadas:', keys);
-
   const dbg = document.getElementById('debug-cols');
   if (dbg) dbg.textContent = 'Columnas: ' + keys.join(' | ');
-
+  // Poblamos el selector de usuarios en la barra superior
+  populateUserSelect();
   populateFilters();
+  
+  // Revisamos si hay un usuario logueado en localStorage
+  const loggedUser = localStorage.getItem('crm_logged_user');
+  if (loggedUser) {
+    const userSelect = document.getElementById('user-select');
+    if (userSelect) userSelect.value = loggedUser;
+    
+    // Mostramos el checkbox de mis expedientes y la sección de KPIs personales
+    document.getElementById('only-my-exp-label').style.display = 'inline-flex';
+    renderPersonalKPIs(loggedUser);
+  } else {
+    document.getElementById('only-my-exp-label').style.display = 'none';
+    document.getElementById('only-my-exp-chk').checked = false;
+    renderPersonalKPIs(null);
+  }
   renderKPIs();
   renderCharts();
   renderTable();
-
   document.getElementById('charts-row').style.display = 'grid';
 }
-
+/* ────────────────────────────────
+   GESTIÓN DE USUARIOS / FUNCIONARIOS
+──────────────────────────────── */
+function populateUserSelect() {
+  const select = document.getElementById('user-select');
+  if (!select) return;
+  
+  const currentVal = select.value;
+  
+  // Extraemos todos los funcionarios únicos
+  const funcionarios = [...new Set(allRows.map(r => col(r, 'funcionario', 'responsable')).filter(Boolean))].sort();
+  
+  select.innerHTML = '<option value="">Identificarse...</option>';
+  funcionarios.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f;
+    opt.textContent = f;
+    select.appendChild(opt);
+  });
+  
+  if (currentVal && funcionarios.includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+function onUserChange() {
+  const select = document.getElementById('user-select');
+  const user = select.value;
+  
+  if (user) {
+    localStorage.setItem('crm_logged_user', user);
+    // Marcamos la opción de ver solo mis expedientes por defecto
+    const chk = document.getElementById('only-my-exp-chk');
+    if (chk) chk.checked = true;
+  } else {
+    localStorage.removeItem('crm_logged_user');
+  }
+  
+  renderAll();
+}
+function logoutUser() {
+  localStorage.removeItem('crm_logged_user');
+  const select = document.getElementById('user-select');
+  if (select) select.value = '';
+  renderAll();
+}
+function renderPersonalKPIs(user) {
+  const personalSecLabel = document.getElementById('personal-sec-label');
+  const personalKpiRow = document.getElementById('personal-kpi-row');
+  
+  if (!user) {
+    personalSecLabel.style.display = 'none';
+    personalKpiRow.style.display = 'none';
+    return;
+  }
+  
+  personalSecLabel.style.display = 'flex';
+  personalSecLabel.innerHTML = `Mi Actividad · <span style="color:var(--blue-mid);font-weight:600;margin-left:4px;">${user}</span> <button onclick="logoutUser()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:10px;text-decoration:underline;margin-left:12px;font-family:'Inter',sans-serif;font-weight:500;">(Salir)</button>`;
+  personalKpiRow.style.display = 'grid';
+  
+  const myRows = allRows.filter(r => (col(r, 'funcionario', 'responsable') || '').trim().toLowerCase() === user.trim().toLowerCase());
+  const total = myRows.length;
+  
+  const adjValues = myRows.map(r => parseMoney(col(r, 'adj', 'adjudicado', 'MONTO DE ADJUDICACION', 'precio adj', 'adjudicación')));
+  const refValues = myRows.map(r => parseMoney(col(r, 'ref', 'referencia', 'precio ref', 'monto ref')));
+  const totalAdj = adjValues.reduce((a,b)=>a+b,0);
+  const totalRef = refValues.reduce((a,b)=>a+b,0);
+  const ahorro = totalRef - totalAdj;
+  const pctAhorro = totalRef > 0 ? (ahorro/totalRef*100) : 0;
+  
+  const completados = myRows.filter(r => {
+    const s = (col(r, 'estado', 'estatus', 'status') || '').toLowerCase();
+    return s.includes('complet') || s.includes('adjudic') || s.includes('finaliz');
+  }).length;
+  const pendientes = total - completados;
+  
+  const kpiData = [
+    { label:'Mis expedientes', value: total, sub: `${completados} completados · ${pendientes} en proceso`, cls:'k-navy' },
+    { label:'Mi monto adjudicado', value: '$' + formatNum(totalAdj), sub: 'Mi precio ref: $' + formatNum(totalRef), cls:'k-blue' },
+    { label:'Mi ahorro logrado', value: '$' + formatNum(ahorro), sub: pctAhorro.toFixed(1) + '% de ahorro', cls:'k-green' },
+    { label:'Mis completados', value: completados, sub: total > 0 ? ((completados/total)*100).toFixed(0) + '% de efectividad' : '0% de efectividad', cls:'k-amber' }
+  ];
+  
+  personalKpiRow.innerHTML = kpiData.map(k => `
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
 /* ────────────────────────────────
    FILTROS DINÁMICOS
 ──────────────────────────────── */
@@ -649,12 +757,10 @@ function populateFilters() {
   const tipos   = [...new Set(allRows.map(r => col(r,'tipo','procedimiento','modalidad')).filter(Boolean))].sort();
   const estados = [...new Set(allRows.map(r => col(r,'estado','estatus','status')).filter(Boolean))].sort();
   const unidades = [...new Set(allRows.map(r => col(r,'unidad','departamento','area','dependencia','ejecutora')).filter(Boolean))].sort();
-
   fillSelect('fil-tipo',   tipos,   'Todos los tipos');
   fillSelect('fil-estado', estados, 'Todos los estados');
   fillSelect('fil-unidad', unidades,'Todas las unidades');
 }
-
 function fillSelect(id, values, placeholder) {
   const sel = document.getElementById(id);
   sel.innerHTML = `<option value="">${placeholder}</option>`;
@@ -664,33 +770,28 @@ function fillSelect(id, values, placeholder) {
     sel.appendChild(o);
   });
 }
-
 /* ────────────────────────────────
    INDICADORES GENERALES (KPIs)
 ──────────────────────────────── */
 function renderKPIs() {
   const total = allRows.length;
   const adjValues   = allRows.map(r => parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación')));
-  const refValues   = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')));
+  const refValues   = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref')));
   const totalAdj = adjValues.reduce((a,b)=>a+b,0);
   const totalRef = refValues.reduce((a,b)=>a+b,0);
   const ahorro = totalRef - totalAdj;
   const pctAhorro = totalRef > 0 ? (ahorro/totalRef*100) : 0;
-
   const completados = allRows.filter(r => {
     const s = col(r,'estado','estatus','status').toLowerCase();
     return s.includes('complet') || s.includes('adjudic') || s.includes('finaliz');
   }).length;
-
   const pendientes = total - completados;
-
   const tipoConteo = {};
   allRows.forEach(r => {
     const t = col(r,'tipo','procedimiento','modalidad') || 'Sin clasificar';
     tipoConteo[t] = (tipoConteo[t]||0) + 1;
   });
   const tipoMasFrecuente = Object.entries(tipoConteo).sort((a,b)=>b[1]-a[1])[0];
-
   const kpiData = [
     { label:'Expedientes totales', value: total, sub: `${completados} completados · ${pendientes} en proceso`, cls:'k-navy' },
     { label:'Monto total adjudicado', value: '$' + formatNum(totalAdj), sub: 'Precio referencia: $' + formatNum(totalRef), cls:'k-blue' },
@@ -698,7 +799,6 @@ function renderKPIs() {
     { label:'Completados', value: completados, sub: ((completados/total)*100).toFixed(0) + '% de efectividad', cls:'k-amber' },
     { label:'Tipo más frecuente', value: tipoMasFrecuente ? tipoMasFrecuente[1] : '-', sub: tipoMasFrecuente ? tipoMasFrecuente[0] : '', cls:'k-red' },
   ];
-
   document.getElementById('kpi-row').innerHTML = kpiData.map(k => `
     <div class="kpi ${k.cls}">
       <div class="kpi-label">${k.label}</div>
@@ -707,31 +807,27 @@ function renderKPIs() {
     </div>
   `).join('');
 }
-
 function formatNum(n) {
   if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
   if (n >= 1000) return n.toLocaleString('es-PA', {minimumFractionDigits:0, maximumFractionDigits:0});
   return n.toFixed(2);
 }
-
 /* ────────────────────────────────
    GRÁFICOS DE CHART.JS
 ──────────────────────────────── */
 const PALETTE = ['#1a3260','#378add','#1a7a4a','#d97a00','#b03030','#5b3da0','#2a8a80','#8a3a60'];
-
 function renderCharts() {
   // Chart 1: Tipo de procedimiento
   const tipoMap = {};
   allRows.forEach(r => {
     const t = col(r,'tipo','procedimiento','modalidad') || 'Otro';
-    const v = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')) ||
-              parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')) || 1;
+    const v = parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación')) ||
+              parseMoney(col(r,'ref','referencia','precio ref','monto ref')) || 1;
     tipoMap[t] = (tipoMap[t]||0) + v;
   });
   const tipoLabels = Object.keys(tipoMap);
   const tipoData   = tipoLabels.map(k => tipoMap[k]);
   const tipoColors = PALETTE.slice(0, tipoLabels.length);
-
   destroyChart('chartTipo');
   charts.tipo = new Chart(document.getElementById('chartTipo'), {
     type: 'doughnut',
@@ -744,7 +840,6 @@ function renderCharts() {
   document.getElementById('leg-tipo').innerHTML = tipoLabels.map((l,i) =>
     `<span class="leg-item"><span class="leg-swatch" style="background:${tipoColors[i]}"></span>${l}</span>`
   ).join('');
-
   // Chart 2: Estado Actual
   const estadoMap = {};
   allRows.forEach(r => {
@@ -760,7 +855,6 @@ function renderCharts() {
     if (low.includes('pend')||low.includes('espera')||low.includes('trámite')) return '#378add';
     return '#8aa0bb';
   });
-
   destroyChart('chartEstado');
   charts.estado = new Chart(document.getElementById('chartEstado'), {
     type: 'bar',
@@ -777,20 +871,18 @@ function renderCharts() {
   document.getElementById('leg-estado').innerHTML = estLabels.map((l,i) =>
     `<span class="leg-item"><span class="leg-swatch" style="background:${estColors[i]}"></span>${l} (${estData[i]})</span>`
   ).join('');
-
   // Chart 3: Precios por Unidad Ejecutora
   const unidadRef = {}; const unidadAdj = {};
   allRows.forEach(r => {
     const u = col(r,'unidad','departamento','area','dependencia','ejecutora') || 'Sin unidad';
-    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
-    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
+    unidadRef[u] = (unidadRef[u]||0) + parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
+    unidadAdj[u] = (unidadAdj[u]||0) + parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación'));
   });
   const uLabels = Object.keys(unidadRef).sort((a,b) => unidadRef[b]-unidadRef[a]).slice(0,8);
   const uRef = uLabels.map(k => unidadRef[k]);
   const uAdj = uLabels.map(k => unidadAdj[k]);
   const barH = Math.max(uLabels.length * 42 + 60, 200);
   document.getElementById('chart-unidad-wrap').style.height = barH + 'px';
-
   destroyChart('chartUnidad');
   charts.unidad = new Chart(document.getElementById('chartUnidad'), {
     type: 'bar',
@@ -814,12 +906,10 @@ function renderCharts() {
     }
   });
 }
-
 function destroyChart(id) {
   const existing = Chart.getChart(id);
   if (existing) existing.destroy();
 }
-
 /* ────────────────────────────────
    TABLA DINÁMICA DE REGISTROS
 ──────────────────────────────── */
@@ -829,7 +919,8 @@ function renderTable() {
   const filTipo  = document.getElementById('fil-tipo').value;
   const filEst   = document.getElementById('fil-estado').value;
   const filUnid  = document.getElementById('fil-unidad').value;
-
+  const onlyMyExp = document.getElementById('only-my-exp-chk').checked;
+  const loggedUser = localStorage.getItem('crm_logged_user');
   const filtered = allRows.filter(r => {
     const req  = col(r,'req','requisicion','numero','nro','expediente');
     const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien');
@@ -837,32 +928,31 @@ function renderTable() {
     const tipo  = col(r,'tipo','procedimiento','modalidad');
     const est   = col(r,'estado','estatus','status');
     const unid  = col(r,'unidad','departamento','area','dependencia','ejecutora');
-
+    const func  = col(r,'funcionario','responsable');
+    // Si está activo el filtro de mis expedientes
+    if (onlyMyExp && loggedUser && (func || '').trim().toLowerCase() !== loggedUser.trim().toLowerCase()) return false;
     if (filTipo && tipo !== filTipo) return false;
     if (filEst  && est  !== filEst)  return false;
     if (filUnid && unid !== filUnid) return false;
-    if (q && !`${req} ${desc} ${prov}`.toLowerCase().includes(q)) return false;
+    if (q && !`${req} ${desc} ${prov} ${func}`.toLowerCase().includes(q)) return false;
     return true;
   });
-
   document.getElementById('row-count').textContent = filtered.length + ' de ' + allRows.length + ' registros';
-
   const tbody = document.getElementById('tbl-body');
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-light)">Sin resultados para los filtros aplicados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-light)">Sin resultados para los filtros aplicados.</td></tr>';
     return;
   }
-
   tbody.innerHTML = filtered.map((r, i) => {
     const req  = col(r,'req','requisicion','numero','nro','expediente') || '—';
     const desc = col(r,'desc','descripcion','concepto','objeto','detalle','bien') || '—';
     const unid = col(r,'unidad','departamento','area','dependencia','ejecutora') || '—';
+    const func = col(r,'funcionario','responsable') || '—';
     const tipo = col(r,'tipo','procedimiento','modalidad') || '—';
-    const ref  = parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario'));
-    const adj  = parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación'));
+    const ref  = parseMoney(col(r,'ref','referencia','precio ref','monto ref'));
+    const adj  = parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación'));
     const prov = col(r,'prov','proveedor','empresa','adjudicad','contratista') || '—';
     const est  = col(r,'estado','estatus','status') || '—';
-
     const estClass = (() => {
       const low = est.toLowerCase();
       if (low.includes('complet')||low.includes('adjudic')) return 'tag-green';
@@ -871,7 +961,6 @@ function renderTable() {
       if (low.includes('espera')) return 'tag-navy';
       return 'tag-amber';
     })();
-
     const tipoClass = (() => {
       const low = tipo.toLowerCase();
       if (low.includes('menor')) return 'tag-green';
@@ -880,12 +969,12 @@ function renderTable() {
       if (low.includes('licit')) return 'tag-red';
       return 'tag-navy';
     })();
-
     return `<tr>
       <td class="mono">${i+1}</td>
       <td class="mono">${req}</td>
       <td style="max-width:220px;font-size:12px">${desc}</td>
       <td style="font-size:11px;color:var(--text-mid)">${unid}</td>
+      <td style="font-size:11px;color:var(--text-mid)">${func}</td>
       <td><span class="tag ${tipoClass}">${tipo}</span></td>
       <td class="amount">${ref ? '$'+ref.toLocaleString('es-PA') : '—'}</td>
       <td class="amount">${adj ? '$'+adj.toLocaleString('es-PA') : '—'}</td>
@@ -893,13 +982,11 @@ function renderTable() {
       <td><span class="tag ${estClass}">${est}</span></td>
     </tr>`;
   }).join('');
-
-  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')),0);
-  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')),0);
+  const totalAdj = filtered.reduce((s,r) => s + parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación')),0);
+  const totalRef = filtered.reduce((s,r) => s + parseMoney(col(r,'ref','referencia','precio ref','monto ref')),0);
   document.getElementById('status-left').textContent = filtered.length + ' expedientes · Adj: $' + totalAdj.toLocaleString('es-PA');
   document.getElementById('status-right').textContent = 'Ref: $' + totalRef.toLocaleString('es-PA') + ' · Ahorro: $' + (totalRef-totalAdj).toLocaleString('es-PA');
 }
-
 /* ────────────────────────────────
    INICIALIZACIÓN AUTOMÁTICA
 ──────────────────────────────── */
