@@ -670,7 +670,7 @@ function fillSelect(id, values, placeholder) {
 ──────────────────────────────── */
 function renderKPIs() {
   const total = allRows.length;
-  const adjValues   = allRows.map(r => parseMoney(col(r,'adj','adjudicado','monto adj','precio adj','adjudicación')));
+  const adjValues   = allRows.map(r => parseMoney(col(r,'adj','adjudicado','MONTO DE ADJUDICACION','precio adj','adjudicación')));
   const refValues   = allRows.map(r => parseMoney(col(r,'ref','referencia','precio ref','monto ref','funcionario')));
   const totalAdj = adjValues.reduce((a,b)=>a+b,0);
   const totalRef = refValues.reduce((a,b)=>a+b,0);
