@@ -512,7 +512,7 @@ footer {
   </footer>
 </div>
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQrgro57QBOlAo8IAz2DQ_kyIze8pkZuU3hgMowzAOl1zrxxcBJ2l2Co8nDdeVpWAw5A7s89pOCIgQZ/pub?gid=0&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/1foMmG0D5iSkuwKF6U_KWYHn1haUGTeox-FqsUDtl3a4/gviz/tq?tqx=out:csv';
 let allRows = [];
 let charts = {};
 /* ────────────────────────────────
@@ -991,7 +991,7 @@ function renderTable() {
    INICIALIZACIÓN AUTOMÁTICA
 ──────────────────────────────── */
 loadData();
-setInterval(loadData, 5 * 60 * 1000);
+setInterval(loadData, 60 * 1000); // Actualiza automáticamente cada 1 minuto
 </script>
 </body>
 </html>
