@@ -46,6 +46,292 @@ body {
   margin: 0 auto;
   padding: 0 24px 64px;
 }
+
+/*CSS MODIFICADO*/
+  /* ── Header Ejecutivo y Rediseño de Controles ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #09152e 0%, #0f1f3d 100%);
+  border-bottom: 1px solid rgba(214, 228, 247, 0.15);
+  box-shadow: 0 10px 30px -10px rgba(15, 31, 61, 0.35);
+  padding: 16px 32px;
+  margin: 0 -24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  height: 44px;
+  transition: transform 0.2s ease;
+}
+
+.logo-container:hover {
+  transform: scale(1.03);
+}
+
+.topbar-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.topbar-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.topbar-brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.topbar-brand .org {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #38bdf8; /* Resaltado en azul suave */
+  margin: 0;
+  opacity: 0.95;
+}
+
+.topbar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.year-badge {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  margin-left: 6px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Indicador de Estado en Vivo */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 11px;
+  color: #34d399;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.05);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Selector de Usuario Modernizado */
+.select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.user-select-dropdown {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 8px 36px 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  min-width: 160px;
+}
+
+.user-select-dropdown:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.user-select-dropdown:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.user-select-dropdown option {
+  background: #0f1f3d;
+  color: #ffffff;
+  padding: 12px;
+}
+
+.select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.select-wrapper:hover .select-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Botón de Actualizar */
+.refresh-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.refresh-btn:hover {
+  background: #ffffff;
+  color: #0f1f3d;
+  border-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.refresh-btn:active {
+  transform: translateY(1px);
+}
+
+.refresh-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.3s ease;
+}
+
+.refresh-btn:hover .refresh-icon {
+  transform: rotate(180deg);
+}
+
+/* Adaptabilidad Responsiva (Breakpoints) */
+@media (max-width: 992px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 24px;
+    gap: 16px;
+  }
+  
+  .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 576px) {
+  .topbar-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .topbar-divider {
+    display: none;
+  }
+  
+  .topbar-right {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .action-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .select-wrapper, .user-select-dropdown, .refresh-btn {
+    width: 100%;
+  }
+}
+/*CIERRE CSS MODIFICADO*/
+  
 /* ── Header ── */
 .topbar {
   background: var(--navy);
@@ -421,6 +707,7 @@ footer {
 </head>
 <body>
 <div class="page">
+  <!--
   <div class="topbar">
     <div class="topbar-brand">
       <img src="logoLNB.png" alt="Logo LNB" class="logo-lnb">
@@ -441,6 +728,52 @@ footer {
         Actualizar
       </button>
     </div>
+    -->
+    <div class="topbar">
+    <!-- Bloque Izquierdo: Logotipo Institucional + Título de la Herramienta -->
+    <div class="topbar-left">
+      <div class="logo-container">
+        <!-- onerror oculta el contenedor si la imagen no existe temporalmente en desarrollo local -->
+        <img src="logoLNB.png" alt="Logo LNB" class="topbar-logo" onerror="this.style.display='none'; this.parentElement.style.padding='0'; this.parentElement.style.background='transparent'; this.parentElement.style.boxShadow='none';">
+      </div>
+      <div class="topbar-divider"></div>
+      <div class="topbar-brand">
+        <div class="org">Lotería Nacional de Beneficencia</div>
+        <h1 class="topbar-title">Dashboard de Compras & Proveeduría <span class="year-badge">2026</span></h1>
+      </div>
+    </div>
+    
+    <!-- Bloque Derecho: Estado de Sincronización + Acciones del Usuario -->
+    <div class="topbar-right">
+      <!-- Indicador de Tiempo Real -->
+      <div class="status-indicator">
+        <div class="live-dot"></div>
+        <span id="last-update">Cargando…</span>
+      </div>
+      
+      <!-- Grupo de Botones de Acción -->
+      <div class="action-group">
+        <!-- Selector con Flecha Personalizada -->
+        <div class="select-wrapper">
+          <select id="user-select" class="user-select-dropdown" onchange="onUserChange()">
+            <option value="">Identificarse...</option>
+          </select>
+          <svg class="select-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+        
+        <!-- Botón de Actualización Manual -->
+        <button class="refresh-btn" onclick="loadData()">
+          <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>
+          </svg>
+          Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+  <!--FINAL-->
   </div>
   <div id="error-box" class="error-box" style="display:none;"></div>
   
